@@ -22,12 +22,15 @@ package org.entcore.auth.security;
 import org.joda.time.DateTime;
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.common.SAMLObject;
+import org.opensaml.common.SAMLVersion;
 import org.opensaml.common.xml.SAMLConstants;
 import org.opensaml.saml2.core.*;
+import org.opensaml.saml2.core.impl.*;
 import org.opensaml.saml2.encryption.Decrypter;
 import org.opensaml.saml2.metadata.EntityDescriptor;
 import org.opensaml.saml2.metadata.IDPSSODescriptor;
 import org.opensaml.saml2.metadata.SingleLogoutService;
+import org.opensaml.saml2.metadata.SingleSignOnService;
 import org.opensaml.saml2.metadata.provider.FilesystemMetadataProvider;
 import org.opensaml.saml2.metadata.provider.MetadataProviderException;
 import org.opensaml.security.MetadataCredentialResolver;
@@ -66,8 +69,10 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
 
 public class SamlValidator extends BusModBase implements Handler<Message<JsonObject>> {
 
@@ -113,12 +118,17 @@ public class SamlValidator extends BusModBase implements Handler<Message<JsonObj
 	public void handle(Message<JsonObject> message) {
 		final String action = message.body().getString("action", "");
 		final String response = message.body().getString("response");
-		if (!"generate-slo-request".equals(action) && (response == null || response.trim().isEmpty())) {
+		final String idp = message.body().getString("IDP");
+		if (!"generate-slo-request".equals(action) && !"generate-authn-request".equals(action) &&
+				(response == null || response.trim().isEmpty())) {
 			sendError(message, "invalid.response");
 			return;
 		}
 		try {
 			switch (action) {
+				case "generate-authn-request" :
+					sendOK(message, new JsonObject().putString("authn-request", generateAuthnRequest(idp)));
+					break;
 				case "validate-signature":
 					sendOK(message, new JsonObject().putBoolean("valid", validateSignature(response)));
 					break;
@@ -137,7 +147,6 @@ public class SamlValidator extends BusModBase implements Handler<Message<JsonObj
 				case "generate-slo-request":
 					String sessionIndex = message.body().getString("SessionIndex");
 					String nameID = message.body().getString("NameID");
-					String idp = message.body().getString("IDP");
 					sendOK(message, new JsonObject().putString("slo", generateSloRequest(nameID, sessionIndex, idp)));
 					break;
 				default:
@@ -146,6 +155,109 @@ public class SamlValidator extends BusModBase implements Handler<Message<JsonObj
 		} catch (Exception e) {
 			sendError(message, e.getMessage(), e);
 		}
+	}
+
+	private String generateAuthnRequest(String idp)
+			throws NoSuchFieldException, IllegalAccessException, MarshallingException, IOException {
+	//	XMLObjectBuilderFactory builderFactory = org.opensaml.Configuration.getBuilderFactory();
+
+		final String id = "ENT_" + getRandomHexString(32); // UUID.randomUUID().toString().replaceAll("\\-","");
+
+		//SAMLObjectBuilder authnRequestBuilder = (SAMLObjectBuilder) builderFactory.getBuilder(AuthnRequest.DEFAULT_ELEMENT_NAME);
+		//AuthnRequest authnRequest = (AuthnRequest) authnRequestBuilder.buildObject();
+
+		//DocumentBuilder builder = factory.newDocumentBuilder();
+		//Document authXmlDocument = builder.parse(new InputSource(new StringReader(this.authRequestString)));
+
+		//Create an issuer Object
+		Issuer issuer = new IssuerBuilder().buildObject("urn:oasis:names:tc:SAML:2.0:assertion", "Issuer", "samlp" );
+		issuer.setValue(this.issuer);
+
+		final NameIDPolicy nameIdPolicy = new NameIDPolicyBuilder().buildObject();
+		nameIdPolicy.setFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:transient");
+		//nameIdPolicy.setSPNameQualifier("http://saml20sp.abilityweb.us");
+		nameIdPolicy.setAllowCreate(true);
+
+		//Create AuthnContextClassRef
+		AuthnContextClassRefBuilder authnContextClassRefBuilder = new AuthnContextClassRefBuilder();
+		AuthnContextClassRef authnContextClassRef =
+				authnContextClassRefBuilder.buildObject("urn:oasis:names:tc:SAML:2.0:assertion",
+						"AuthnContextClassRef", "saml");
+		authnContextClassRef.setAuthnContextClassRef("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport");
+		//Marshaller accrMarshaller = org.opensaml.Configuration.getMarshallerFactory().getMarshaller(authnContextClassRef);
+		//org.w3c.dom.Element authnContextClassRefDom = accrMarshaller.marshall(authnContextClassRef);
+
+
+		RequestedAuthnContext requestedAuthnContext = new RequestedAuthnContextBuilder().buildObject();
+		requestedAuthnContext.setComparison(AuthnContextComparisonTypeEnumeration.EXACT);
+		requestedAuthnContext.getAuthnContextClassRefs().add(authnContextClassRef);
+		//requestedAuthnContext.setDOM(authnContextClassRefDom);
+		//authnContextClassRef.
+		//.setParent((XMLObject) requestedAuthnContext);
+
+
+
+		final AuthnRequest authRequest =  new AuthnRequestBuilder()
+				.buildObject("urn:oasis:names:tc:SAML:2.0:protocol", "AuthnRequest", "samlp");
+		//AuthnRequest request = (AuthnRequest) buildXMLObject(AuthnRequest.DEFAULT_ELEMENT_NAME);
+		//authRequest.ASSERTION_CONSUMER_SERVICE_URL_ATTRIB_NAME = "AssertionConsumerServiceURL";
+		//authRequest.FORCE_AUTHN_ATTRIB_NAME = "ForceAuthn";
+		//authRequest.IS_PASSIVE_ATTRIB_NAME = "IsPassive";
+		authRequest.setForceAuthn(false);
+		authRequest.setIsPassive(false);
+		authRequest.setIssueInstant(new DateTime());
+		authRequest.setProtocolBinding("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST");
+		authRequest.setAssertionConsumerServiceURL("https://preprod-acbordeaux2d.opendigitaleducation.com/auth/saml/acs");
+		authRequest.setAssertionConsumerServiceIndex(1);
+		authRequest.setAttributeConsumingServiceIndex(1);
+		authRequest.setIssuer(issuer);
+		authRequest.setNameIDPolicy(nameIdPolicy);
+		authRequest.setRequestedAuthnContext(requestedAuthnContext); //TODO: How to connect the AuthnContextClassRef that I created for this object
+		authRequest.setID(id);
+		authRequest.setVersion(SAMLVersion.VERSION_20);
+
+
+
+		final String anr = SamlUtils.marshallAuthnRequest(authRequest);
+		logger.debug(anr);
+		//final ByteArrayOutputStream bos = deflateContent(anr.getBytes("UTF-8"));
+
+//		// Now we must build our representation to put into the html form to be submitted to the idp
+//		Marshaller marshaller = org.opensaml.Configuration.getMarshallerFactory().getMarshaller(authRequest);
+//		org.w3c.dom.Element authDOM = marshaller.marshall(authRequest);
+//		StringWriter rspWrt = new StringWriter();
+//		XMLHelper.writeNode(authDOM, rspWrt);
+//		String messageXML = rspWrt.toString();
+//		//String samlResponse = new String(Base64.encodeBytes(messageXML.getBytes(), Base64.DONT_BREAK_LINES));
+//
+//		//delete this area
+//		//String temp = "<samlp:AuthnRequest  xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\"  ID=\"71069679271a7cf36e0e02e48084798ea844fce23f\" Version=\"2.0\" IssueInstant=\"2010-03-09T10:46:23Z\" ForceAuthn=\"false\" IsPassive=\"false\" ProtocolBinding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\" AssertionConsumerServiceURL=\"http://saml20sp.abilityweb.us/spdbg/sp.php\"><saml:Issuer xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">http://saml20sp.abilityweb.us</saml:Issuer><samlp:NameIDPolicy  xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" Format=\"urn:oasis:names:tc:SAML:2.0:nameid-format:persistent\" SPNameQualifier=\"http://saml20sp.abilityweb.us\" AllowCreate=\"true\"></samlp:NameIDPolicy><samlp:RequestedAuthnContext xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" Comparison=\"exact\"><saml:AuthnContextClassRef xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport</saml:AuthnContextClassRef></samlp:RequestedAuthnContext></samlp:AuthnRequest>";
+		Deflater deflater = new Deflater(Deflater.DEFLATED, true);
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(bos, deflater);
+		deflaterOutputStream.write(anr.getBytes("UTF-8"));
+		deflaterOutputStream.close();
+//		String samlResponse = Base64.encodeBytes(byteArrayOutputStream.toByteArray(), Base64.DONT_BREAK_LINES);
+//		String outputString = new String(byteArrayOutputStream.toByteArray());
+//		//System.out.println("Compressed String: " + outputString);
+//		samlResponse = URLEncoder.encode(samlResponse);
+//
+//		String actionURL = this.redirectionUrl;
+//		System.out.println("Converted AuthRequest: " + messageXML);
+//		System.out.println("samlResponse: " + samlResponse);
+//		//messageXML = messageXML.replace("<", "&lt;");
+//		//messageXML = messageXML.replace(">", "&gt;");
+//
+//		String url = actionURL + "?SAMLRequest=" + samlResponse + "&RelayState=" + this.relayState;
+//		System.out.println(url);
+		return  getAuthnRequestUri(idp) + "?SAMLRequest=" + URLEncoder.encode(
+				Base64.encodeBytes(bos.toByteArray(), Base64.DONT_BREAK_LINES), "UTF-8") +
+				"&RelayState=" + UUID.randomUUID().toString();
+
+
+
+		//HTTPRedirectDeflateEncoder httpRedirectDeflateEncoder = new HTTPRedirectDeflateEncoder();
+		//httpRedirectDeflateEncoder.encode((MessageContext) authDOM);
 	}
 
 	private String generateSloRequest(String nameID, String sessionIndex, String idp)
@@ -172,7 +284,13 @@ public class SamlValidator extends BusModBase implements Handler<Message<JsonObj
 		logoutRequest.setNameID(nameId);
 
 		byte[] lr = SamlUtils.marshallLogoutRequest(logoutRequest).getBytes("UTF-8");
+		ByteArrayOutputStream bos = deflateContent(lr);
 
+		return sloUri + "?SAMLRequest=" + URLEncoder.encode(Base64.encodeBytes(bos.toByteArray()), "UTF-8") +
+				"&RelayState=NULL";
+	}
+
+	private ByteArrayOutputStream deflateContent(byte[] lr) throws IOException {
 		// compress response
 		Deflater deflater = new Deflater();
 		deflater.setInput(lr);
@@ -185,9 +303,21 @@ public class SamlValidator extends BusModBase implements Handler<Message<JsonObj
 		}
 		deflater.end();
 		bos.close();
+		return bos;
+	}
 
-		return sloUri + "?SAMLRequest=" + URLEncoder.encode(Base64.encodeBytes(bos.toByteArray()), "UTF-8") +
-				"&RelayState=NULL";
+	private String getAuthnRequestUri(String idp) {
+		String ssoServiceURI = null;
+		EntityDescriptor entityDescriptor = entityDescriptorMap.get(idp);
+		if (entityDescriptor != null) {
+			for (SingleSignOnService ssos : entityDescriptor.getIDPSSODescriptor(SAMLConstants.SAML20P_NS)
+					.getSingleSignOnServices()) {
+				if (ssos.getBinding().equals(SAMLConstants.SAML2_REDIRECT_BINDING_URI)) {
+					ssoServiceURI = ssos.getLocation();
+				}
+			}
+		}
+		return ssoServiceURI;
 	}
 
 	private String getLogoutUri(String idp) {
@@ -297,6 +427,16 @@ public class SamlValidator extends BusModBase implements Handler<Message<JsonObj
 			}
 		}
 		return assertion;
+	}
+
+	private String getRandomHexString(int numchars){
+		Random r = new Random();
+		StringBuilder sb = new StringBuilder();
+		while(sb.length() < numchars){
+			sb.append(Integer.toHexString(r.nextInt()));
+		}
+
+		return sb.toString().substring(0, numchars);
 	}
 
 }

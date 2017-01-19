@@ -27,6 +27,7 @@ import fr.wseduc.webutils.security.HmacSha1;
 import org.entcore.auth.security.SamlUtils;
 import org.entcore.auth.services.SamlServiceProvider;
 import org.entcore.auth.services.SamlServiceProviderFactory;
+import org.entcore.common.http.response.DefaultPages;
 import org.entcore.common.user.UserInfos;
 import org.entcore.common.user.UserUtils;
 import org.opensaml.DefaultBootstrap;
@@ -48,14 +49,60 @@ import java.net.URLEncoder;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
+import static fr.wseduc.webutils.Utils.isEmpty;
 import static fr.wseduc.webutils.Utils.isNotEmpty;
 
 public class SamlController extends AbstractFederateController {
 
 	private SamlServiceProviderFactory spFactory;
+	private JsonObject samlWayfParams;
+	private JsonObject samlWayfMustacheFormat;
 
 	public SamlController() throws ConfigurationException {
 		DefaultBootstrap.bootstrap();
+	}
+
+	@Get("/saml/wayf")
+	public void wayf(HttpServerRequest request) {
+		if (samlWayfParams != null) {
+			if (samlWayfMustacheFormat == null) {
+				final JsonArray wmf = new JsonArray();
+				for (String attr : samlWayfParams.getFieldNames()) {
+					wmf.addString(attr);
+				}
+				samlWayfMustacheFormat = new JsonObject().putArray("providers", wmf);
+			}
+			renderView(request, samlWayfMustacheFormat, "wayf.html", null);
+		} else {
+			// TODO change for redirect loginuri
+			request.response().setStatusCode(401).setStatusMessage("Unauthorized")
+					.putHeader("content-type", "text/html").end(DefaultPages.UNAUTHORIZED.getPage());
+		}
+	}
+
+	@Get("/saml/authn/:providerId")
+	public void auth(final HttpServerRequest request) {
+		final String idp = samlWayfParams.getString(request.params().get("providerId"));
+		if (isEmpty(idp)) {
+			forbidden(request, "invalid.provider");
+			return;
+		}
+		final JsonObject event = new JsonObject()
+				.putString("action", "generate-authn-request").putString("IDP", idp);
+		vertx.eventBus().send("saml", event, new Handler<Message<JsonObject>>() {
+			@Override
+			public void handle(Message<JsonObject> event) {
+				if (log.isDebugEnabled()) {
+					log.debug("authn request : " + event.body().encodePrettily());
+				}
+				final String authnRequest = event.body().getString("authn-request");
+				if (isNotEmpty(authnRequest)) {
+					redirect(request, authnRequest, "");
+				} else {
+					badRequest(request, "empty.authn.request");
+				}
+			}
+		});
 	}
 
 	@Post("/saml/acs")
@@ -260,6 +307,10 @@ public class SamlController extends AbstractFederateController {
 
 	public void setServiceProviderFactory(SamlServiceProviderFactory spFactory) {
 		this.spFactory = spFactory;
+	}
+
+	public void setSamlWayfParams(JsonObject samlWayfParams) {
+		this.samlWayfParams = samlWayfParams;
 	}
 
 }
