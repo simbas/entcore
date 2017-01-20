@@ -45,6 +45,8 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.json.impl.Base64;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -68,7 +70,22 @@ public class SamlController extends AbstractFederateController {
 			if (samlWayfMustacheFormat == null) {
 				final JsonArray wmf = new JsonArray();
 				for (String attr : samlWayfParams.getFieldNames()) {
-					wmf.addString(attr);
+					JsonObject i = samlWayfParams.getObject(attr);
+					if (i == null) continue;
+					final String acs = i.getString("acs");
+					if (isEmpty(acs)) continue;
+					URI uri;
+					try {
+						uri = new URI(acs);
+					} catch (URISyntaxException e) {
+						log.error("Invalid acs URI", e);
+						continue;
+					}
+					JsonObject o = new JsonObject()
+							.putString("name", attr)
+							.putString("uri", uri.getScheme() + "://" + uri.getHost() +
+									(attr.startsWith("login") ? "/auth/login" : "/auth/saml/authn/" + attr));
+					wmf.addObject(o);
 				}
 				samlWayfMustacheFormat = new JsonObject().putArray("providers", wmf);
 			}
@@ -82,13 +99,12 @@ public class SamlController extends AbstractFederateController {
 
 	@Get("/saml/authn/:providerId")
 	public void auth(final HttpServerRequest request) {
-		final String idp = samlWayfParams.getString(request.params().get("providerId"));
-		if (isEmpty(idp)) {
+		final JsonObject item = samlWayfParams.getObject(request.params().get("providerId"));
+		if (item == null) {
 			forbidden(request, "invalid.provider");
 			return;
 		}
-		final JsonObject event = new JsonObject()
-				.putString("action", "generate-authn-request").putString("IDP", idp);
+		final JsonObject event = item.copy().putString("action", "generate-authn-request");
 		vertx.eventBus().send("saml", event, new Handler<Message<JsonObject>>() {
 			@Override
 			public void handle(Message<JsonObject> event) {
@@ -97,6 +113,7 @@ public class SamlController extends AbstractFederateController {
 				}
 				final String authnRequest = event.body().getString("authn-request");
 				if (isNotEmpty(authnRequest)) {
+					CookieHelper.getInstance().setSigned("relaystate", event.body().getString("relay-state"), 900, request);
 					redirect(request, authnRequest, "");
 				} else {
 					badRequest(request, "empty.authn.request");
@@ -107,6 +124,13 @@ public class SamlController extends AbstractFederateController {
 
 	@Post("/saml/acs")
 	public void acs(final HttpServerRequest request) {
+		if (samlWayfParams != null) {
+			final String state = CookieHelper.getInstance().getSigned("relaystate", request);
+			if (isEmpty(state) || !state.equals(request.params().get("RelayState"))) {
+				forbidden(request, "invalid_state");
+				return;
+			}
+		}
 		validateResponseAndGetAssertion(request, new Handler<Assertion>() {
 			@Override
 			public void handle(final Assertion assertion) {

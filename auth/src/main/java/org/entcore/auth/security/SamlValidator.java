@@ -19,6 +19,7 @@
 
 package org.entcore.auth.security;
 
+import fr.wseduc.webutils.data.ZLib;
 import org.joda.time.DateTime;
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.common.SAMLObject;
@@ -56,9 +57,7 @@ import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.json.impl.Base64;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -69,10 +68,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.UUID;
-import java.util.zip.Deflater;
-import java.util.zip.DeflaterOutputStream;
 
 public class SamlValidator extends BusModBase implements Handler<Message<JsonObject>> {
 
@@ -127,7 +123,9 @@ public class SamlValidator extends BusModBase implements Handler<Message<JsonObj
 		try {
 			switch (action) {
 				case "generate-authn-request" :
-					sendOK(message, new JsonObject().putString("authn-request", generateAuthnRequest(idp)));
+					String sp = message.body().getString("SP");
+					String acs = message.body().getString("acs");
+					sendOK(message, generateAuthnRequest(idp, sp, acs));
 					break;
 				case "validate-signature":
 					sendOK(message, new JsonObject().putBoolean("valid", validateSignature(response)));
@@ -157,25 +155,17 @@ public class SamlValidator extends BusModBase implements Handler<Message<JsonObj
 		}
 	}
 
-	private String generateAuthnRequest(String idp)
+	private JsonObject generateAuthnRequest(String idp, String sp, String acs)
 			throws NoSuchFieldException, IllegalAccessException, MarshallingException, IOException {
-	//	XMLObjectBuilderFactory builderFactory = org.opensaml.Configuration.getBuilderFactory();
-
-		final String id = "ENT_" + getRandomHexString(32); // UUID.randomUUID().toString().replaceAll("\\-","");
-
-		//SAMLObjectBuilder authnRequestBuilder = (SAMLObjectBuilder) builderFactory.getBuilder(AuthnRequest.DEFAULT_ELEMENT_NAME);
-		//AuthnRequest authnRequest = (AuthnRequest) authnRequestBuilder.buildObject();
-
-		//DocumentBuilder builder = factory.newDocumentBuilder();
-		//Document authXmlDocument = builder.parse(new InputSource(new StringReader(this.authRequestString)));
+		final String id = "ENT_" + UUID.randomUUID().toString();
 
 		//Create an issuer Object
 		Issuer issuer = new IssuerBuilder().buildObject("urn:oasis:names:tc:SAML:2.0:assertion", "Issuer", "samlp" );
-		issuer.setValue(this.issuer);
+		issuer.setValue(sp);
 
 		final NameIDPolicy nameIdPolicy = new NameIDPolicyBuilder().buildObject();
 		nameIdPolicy.setFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:transient");
-		//nameIdPolicy.setSPNameQualifier("http://saml20sp.abilityweb.us");
+		//nameIdPolicy.setSPNameQualifier("");
 		nameIdPolicy.setAllowCreate(true);
 
 		//Create AuthnContextClassRef
@@ -184,80 +174,34 @@ public class SamlValidator extends BusModBase implements Handler<Message<JsonObj
 				authnContextClassRefBuilder.buildObject("urn:oasis:names:tc:SAML:2.0:assertion",
 						"AuthnContextClassRef", "saml");
 		authnContextClassRef.setAuthnContextClassRef("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport");
-		//Marshaller accrMarshaller = org.opensaml.Configuration.getMarshallerFactory().getMarshaller(authnContextClassRef);
-		//org.w3c.dom.Element authnContextClassRefDom = accrMarshaller.marshall(authnContextClassRef);
-
 
 		RequestedAuthnContext requestedAuthnContext = new RequestedAuthnContextBuilder().buildObject();
 		requestedAuthnContext.setComparison(AuthnContextComparisonTypeEnumeration.EXACT);
 		requestedAuthnContext.getAuthnContextClassRefs().add(authnContextClassRef);
-		//requestedAuthnContext.setDOM(authnContextClassRefDom);
-		//authnContextClassRef.
-		//.setParent((XMLObject) requestedAuthnContext);
-
-
 
 		final AuthnRequest authRequest =  new AuthnRequestBuilder()
 				.buildObject("urn:oasis:names:tc:SAML:2.0:protocol", "AuthnRequest", "samlp");
-		//AuthnRequest request = (AuthnRequest) buildXMLObject(AuthnRequest.DEFAULT_ELEMENT_NAME);
-		//authRequest.ASSERTION_CONSUMER_SERVICE_URL_ATTRIB_NAME = "AssertionConsumerServiceURL";
-		//authRequest.FORCE_AUTHN_ATTRIB_NAME = "ForceAuthn";
-		//authRequest.IS_PASSIVE_ATTRIB_NAME = "IsPassive";
 		authRequest.setForceAuthn(false);
 		authRequest.setIsPassive(false);
 		authRequest.setIssueInstant(new DateTime());
 		authRequest.setProtocolBinding("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST");
-		authRequest.setAssertionConsumerServiceURL("https://preprod-acbordeaux2d.opendigitaleducation.com/auth/saml/acs");
+		authRequest.setAssertionConsumerServiceURL(acs);
 		authRequest.setAssertionConsumerServiceIndex(1);
 		authRequest.setAttributeConsumingServiceIndex(1);
 		authRequest.setIssuer(issuer);
 		authRequest.setNameIDPolicy(nameIdPolicy);
-		authRequest.setRequestedAuthnContext(requestedAuthnContext); //TODO: How to connect the AuthnContextClassRef that I created for this object
+		authRequest.setRequestedAuthnContext(requestedAuthnContext);
 		authRequest.setID(id);
 		authRequest.setVersion(SAMLVersion.VERSION_20);
 
-
-
 		final String anr = SamlUtils.marshallAuthnRequest(authRequest);
-		logger.debug(anr);
-		//final ByteArrayOutputStream bos = deflateContent(anr.getBytes("UTF-8"));
-
-//		// Now we must build our representation to put into the html form to be submitted to the idp
-//		Marshaller marshaller = org.opensaml.Configuration.getMarshallerFactory().getMarshaller(authRequest);
-//		org.w3c.dom.Element authDOM = marshaller.marshall(authRequest);
-//		StringWriter rspWrt = new StringWriter();
-//		XMLHelper.writeNode(authDOM, rspWrt);
-//		String messageXML = rspWrt.toString();
-//		//String samlResponse = new String(Base64.encodeBytes(messageXML.getBytes(), Base64.DONT_BREAK_LINES));
-//
-//		//delete this area
-//		//String temp = "<samlp:AuthnRequest  xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\"  ID=\"71069679271a7cf36e0e02e48084798ea844fce23f\" Version=\"2.0\" IssueInstant=\"2010-03-09T10:46:23Z\" ForceAuthn=\"false\" IsPassive=\"false\" ProtocolBinding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\" AssertionConsumerServiceURL=\"http://saml20sp.abilityweb.us/spdbg/sp.php\"><saml:Issuer xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">http://saml20sp.abilityweb.us</saml:Issuer><samlp:NameIDPolicy  xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" Format=\"urn:oasis:names:tc:SAML:2.0:nameid-format:persistent\" SPNameQualifier=\"http://saml20sp.abilityweb.us\" AllowCreate=\"true\"></samlp:NameIDPolicy><samlp:RequestedAuthnContext xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" Comparison=\"exact\"><saml:AuthnContextClassRef xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport</saml:AuthnContextClassRef></samlp:RequestedAuthnContext></samlp:AuthnRequest>";
-		Deflater deflater = new Deflater(Deflater.DEFLATED, true);
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(bos, deflater);
-		deflaterOutputStream.write(anr.getBytes("UTF-8"));
-		deflaterOutputStream.close();
-//		String samlResponse = Base64.encodeBytes(byteArrayOutputStream.toByteArray(), Base64.DONT_BREAK_LINES);
-//		String outputString = new String(byteArrayOutputStream.toByteArray());
-//		//System.out.println("Compressed String: " + outputString);
-//		samlResponse = URLEncoder.encode(samlResponse);
-//
-//		String actionURL = this.redirectionUrl;
-//		System.out.println("Converted AuthRequest: " + messageXML);
-//		System.out.println("samlResponse: " + samlResponse);
-//		//messageXML = messageXML.replace("<", "&lt;");
-//		//messageXML = messageXML.replace(">", "&gt;");
-//
-//		String url = actionURL + "?SAMLRequest=" + samlResponse + "&RelayState=" + this.relayState;
-//		System.out.println(url);
-		return  getAuthnRequestUri(idp) + "?SAMLRequest=" + URLEncoder.encode(
-				Base64.encodeBytes(bos.toByteArray(), Base64.DONT_BREAK_LINES), "UTF-8") +
-				"&RelayState=" + UUID.randomUUID().toString();
-
-
-
-		//HTTPRedirectDeflateEncoder httpRedirectDeflateEncoder = new HTTPRedirectDeflateEncoder();
-		//httpRedirectDeflateEncoder.encode((MessageContext) authDOM);
+		final String rs = UUID.randomUUID().toString();
+		return new JsonObject()
+				.putString("id", id)
+				.putString("relay-state", rs)
+				.putString("authn-request",
+						getAuthnRequestUri(idp) + "?SAMLRequest=" + URLEncoder.encode(ZLib.deflateAndEncode(anr), "UTF-8") +
+								"&RelayState=" + rs);
 	}
 
 	private String generateSloRequest(String nameID, String sessionIndex, String idp)
@@ -283,27 +227,10 @@ public class SamlValidator extends BusModBase implements Handler<Message<JsonObj
 
 		logoutRequest.setNameID(nameId);
 
-		byte[] lr = SamlUtils.marshallLogoutRequest(logoutRequest).getBytes("UTF-8");
-		ByteArrayOutputStream bos = deflateContent(lr);
+		String lr = SamlUtils.marshallLogoutRequest(logoutRequest);
 
-		return sloUri + "?SAMLRequest=" + URLEncoder.encode(Base64.encodeBytes(bos.toByteArray()), "UTF-8") +
+		return sloUri + "?SAMLRequest=" + URLEncoder.encode(ZLib.deflateAndEncode(lr), "UTF-8") +
 				"&RelayState=NULL";
-	}
-
-	private ByteArrayOutputStream deflateContent(byte[] lr) throws IOException {
-		// compress response
-		Deflater deflater = new Deflater();
-		deflater.setInput(lr);
-		deflater.finish();
-		ByteArrayOutputStream bos = new ByteArrayOutputStream(lr.length);
-		byte[] buffer = new byte[1024];
-		while (!deflater.finished()) {
-			int bytesCompressed = deflater.deflate(buffer);
-			bos.write(buffer,0,bytesCompressed);
-		}
-		deflater.end();
-		bos.close();
-		return bos;
 	}
 
 	private String getAuthnRequestUri(String idp) {
@@ -427,16 +354,6 @@ public class SamlValidator extends BusModBase implements Handler<Message<JsonObj
 			}
 		}
 		return assertion;
-	}
-
-	private String getRandomHexString(int numchars){
-		Random r = new Random();
-		StringBuilder sb = new StringBuilder();
-		while(sb.length() < numchars){
-			sb.append(Integer.toHexString(r.nextInt()));
-		}
-
-		return sb.toString().substring(0, numchars);
 	}
 
 }
