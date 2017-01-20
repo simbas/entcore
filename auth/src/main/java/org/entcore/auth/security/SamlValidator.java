@@ -57,12 +57,16 @@ import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.core.json.impl.Base64;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -125,7 +129,8 @@ public class SamlValidator extends BusModBase implements Handler<Message<JsonObj
 				case "generate-authn-request" :
 					String sp = message.body().getString("SP");
 					String acs = message.body().getString("acs");
-					sendOK(message, generateAuthnRequest(idp, sp, acs));
+					boolean sign = message.body().getBoolean("AuthnRequestsSigned", false);
+					sendOK(message, generateAuthnRequest(idp, sp, acs, sign));
 					break;
 				case "validate-signature":
 					sendOK(message, new JsonObject().putBoolean("valid", validateSignature(response)));
@@ -155,8 +160,8 @@ public class SamlValidator extends BusModBase implements Handler<Message<JsonObj
 		}
 	}
 
-	private JsonObject generateAuthnRequest(String idp, String sp, String acs)
-			throws NoSuchFieldException, IllegalAccessException, MarshallingException, IOException {
+	private JsonObject generateAuthnRequest(String idp, String sp, String acs, boolean sign)
+			throws NoSuchFieldException, IllegalAccessException, MarshallingException, IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
 		final String id = "ENT_" + UUID.randomUUID().toString();
 
 		//Create an issuer Object
@@ -194,14 +199,27 @@ public class SamlValidator extends BusModBase implements Handler<Message<JsonObj
 		authRequest.setID(id);
 		authRequest.setVersion(SAMLVersion.VERSION_20);
 
-		final String anr = SamlUtils.marshallAuthnRequest(authRequest);
+		final String anr = SamlUtils.marshallAuthnRequest(authRequest)
+				.replaceFirst("<\\?xml version=\"1.0\" encoding=\"UTF-8\"\\?>\n", "");
 		final String rs = UUID.randomUUID().toString();
+		String queryString = "SAMLRequest=" + URLEncoder.encode(ZLib.deflateAndEncode(anr), "UTF-8") +
+				"&RelayState=" + rs;
+		if (sign) {
+			queryString = sign(queryString);
+		}
+
 		return new JsonObject()
 				.putString("id", id)
 				.putString("relay-state", rs)
-				.putString("authn-request",
-						getAuthnRequestUri(idp) + "?SAMLRequest=" + URLEncoder.encode(ZLib.deflateAndEncode(anr), "UTF-8") +
-								"&RelayState=" + rs);
+				.putString("authn-request", getAuthnRequestUri(idp) + "?" + queryString);
+	}
+
+	private String sign(String c) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, UnsupportedEncodingException {
+		final String content = c + "&SigAlg=http%3A%2F%2Fwww.w3.org%2F2000%2F09%2Fxmldsig%23rsa-sha1";
+		java.security.Signature sign = java.security.Signature.getInstance("SHA1withRSA");
+		sign.initSign(privateKey);
+		sign.update(content.getBytes("UTF-8"));
+		return content + "&Signature=" +  URLEncoder.encode(Base64.encodeBytes(sign.sign(), Base64.DONT_BREAK_LINES), "UTF-8");
 	}
 
 	private String generateSloRequest(String nameID, String sessionIndex, String idp)
