@@ -45,6 +45,8 @@ import java.io.StringWriter;
 
 public final class SamlUtils {
 
+	public static final String SIMPLE_RS = "SimpleRS";
+
 	public static Response unmarshallResponse(String response) throws Exception {
 		Document document = getDocumentFromString(response);
 		UnmarshallerFactory unmarshallerFactory = Configuration.getUnmarshallerFactory();

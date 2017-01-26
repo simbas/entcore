@@ -130,7 +130,11 @@ public class SamlValidator extends BusModBase implements Handler<Message<JsonObj
 					String sp = message.body().getString("SP");
 					String acs = message.body().getString("acs");
 					boolean sign = message.body().getBoolean("AuthnRequestsSigned", false);
-					sendOK(message, generateAuthnRequest(idp, sp, acs, sign));
+					if (message.body().getBoolean("SimpleSPEntityID", false)) {
+						sendOK(message, generateSimpleSPEntityIDRequest(idp, sp));
+					} else {
+						sendOK(message, generateAuthnRequest(idp, sp, acs, sign));
+					}
 					break;
 				case "validate-signature":
 					sendOK(message, new JsonObject().putBoolean("valid", validateSignature(response)));
@@ -158,6 +162,12 @@ public class SamlValidator extends BusModBase implements Handler<Message<JsonObj
 		} catch (Exception e) {
 			sendError(message, e.getMessage(), e);
 		}
+	}
+
+	private JsonObject generateSimpleSPEntityIDRequest(String idp, String sp) {
+		return new JsonObject()
+				.putString("authn-request", getAuthnRequestUri(idp) + "?SPEntityID=" + sp)
+				.putString("relay-state", SamlUtils.SIMPLE_RS);
 	}
 
 	private JsonObject generateAuthnRequest(String idp, String sp, String acs, boolean sign)

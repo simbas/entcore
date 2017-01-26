@@ -29,7 +29,6 @@ import org.entcore.auth.services.SamlServiceProvider;
 import org.entcore.auth.services.SamlServiceProviderFactory;
 import org.entcore.common.http.response.DefaultPages;
 import org.entcore.common.user.UserInfos;
-import org.entcore.common.user.UserUtils;
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.AuthnStatement;
@@ -91,7 +90,6 @@ public class SamlController extends AbstractFederateController {
 			}
 			renderView(request, samlWayfMustacheFormat, "wayf.html", null);
 		} else {
-			// TODO change for redirect loginuri
 			request.response().setStatusCode(401).setStatusMessage("Unauthorized")
 					.putHeader("content-type", "text/html").end(DefaultPages.UNAUTHORIZED.getPage());
 		}
@@ -124,13 +122,6 @@ public class SamlController extends AbstractFederateController {
 
 	@Post("/saml/acs")
 	public void acs(final HttpServerRequest request) {
-		if (samlWayfParams != null) {
-			final String state = CookieHelper.getInstance().getSigned("relaystate", request);
-			if (isEmpty(state) || !state.equals(request.params().get("RelayState"))) {
-				forbidden(request, "invalid_state");
-				return;
-			}
-		}
 		validateResponseAndGetAssertion(request, new Handler<Assertion>() {
 			@Override
 			public void handle(final Assertion assertion) {
@@ -317,7 +308,14 @@ public class SamlController extends AbstractFederateController {
 		request.endHandler(new VoidHandler() {
 			@Override
 			protected void handle() {
-				log.debug("handle");
+				if (samlWayfParams != null) {
+					final String state = CookieHelper.getInstance().getSigned("relaystate", request);
+					if (isEmpty(state) || (!state.equals(request.formAttributes().get("RelayState")) &&
+							!state.equals(SamlUtils.SIMPLE_RS))) {
+						forbidden(request, "invalid_state");
+						return;
+					}
+				}
 				String samlResponse = request.formAttributes().get("SAMLResponse");
 				log.debug(samlResponse);
 				if (samlResponse != null && !samlResponse.trim().isEmpty()) {
