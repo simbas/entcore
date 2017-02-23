@@ -5,7 +5,7 @@ var buildLocalList = [];
 
 var local = {
     paths: {
-        cssLib: '../entcore-css-lib',
+        cssLib: '../css-lib',
         infraFront: '../infra-front'
     }
 };
