@@ -146,12 +146,14 @@ public class DefaultUserService implements UserService {
 				"OPTIONAL MATCH u<-[:RELATED]-(child: User) " +
 				"OPTIONAL MATCH u-[:RELATED]->(parent: User) " +
 				"OPTIONAL MATCH u-[:IN]->(fgroup: FunctionalGroup) " +
+				"OPTIONAL MATCH u-[:IN]->(mgroup: ManualGroup) " +
 				"OPTIONAL MATCH u-[:ADMINISTRATIVE_ATTACHMENT]->(admStruct: Structure) " +
 				"WITH u," +
 				"COLLECT(distinct s) as structureNodes," +
 				"CASE WHEN child IS NULL THEN [] ELSE collect(distinct {id: child.id, displayName: child.displayName, firstName: child.firstName, lastName: child.lastName, externalId: child.externalId}) END as children," +
 				"CASE WHEN parent IS NULL THEN [] ELSE collect(distinct {id: parent.id, displayName: parent.displayName, firstName: parent.firstName, lastName: parent.lastName, externalId: parent.externalId}) END as parents," +
 				"CASE WHEN fgroup IS NULL THEN [] ELSE collect(distinct {id: fgroup.id, name: fgroup.name}) END as functionalGroups," +
+				"CASE WHEN mgroup IS NULL THEN [] ELSE collect(distinct {id: mgroup.id, name: mgroup.name}) END as manualGroups," +
 				"CASE WHEN admStruct IS NULL THEN [] ELSE collect(distinct {id: admStruct.id}) END as administrativeStructures " +
 				"OPTIONAL MATCH u-[rf:HAS_FUNCTION]->fg-[:CONTAINS_FUNCTION*0..1]->(f:Function) " +
 				"RETURN " +
@@ -161,6 +163,7 @@ public class DefaultUserService implements UserService {
 				"children," +
 				"parents," +
 				"functionalGroups," +
+				"manualGroups," +
 				"administrativeStructures," +
 				"u";
 		neo.execute(query, new JsonObject().putString("id", id), fullNodeMergeHandler("u", result, "structureNodes"));
