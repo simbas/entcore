@@ -49,3 +49,10 @@ portal/src/main/resources/public/temp
 directory/src/main/resources/view/*
 directory/src/main/resources/public/js
 directory/src/main/resources/public/temp
+sample-*/
+vertx_classpath.txt
+.tern-project
+.htmlhintrc
+javaconfig.json
+classpath.txt
+.vscode/
