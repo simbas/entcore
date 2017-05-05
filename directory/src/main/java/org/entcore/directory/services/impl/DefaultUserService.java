@@ -141,20 +141,27 @@ public class DefaultUserService implements UserService {
 	@Override
 	public void get(String id, Handler<Either<String, JsonObject>> result) {
 		String query =
-				"MATCH (u:`User` { id : {id}}) " +
+				"MATCH (u:`User` { id : {id} }) " +
 				"OPTIONAL MATCH u-[:IN]->()-[:DEPENDS]->(s:Structure) " +
-				"OPTIONAL MATCH u-[rf:HAS_FUNCTION]->fg-[:CONTAINS_FUNCTION*0..1]->(f:Function) " +
 				"OPTIONAL MATCH u<-[:RELATED]-(child: User) " +
 				"OPTIONAL MATCH u-[:RELATED]->(parent: User) " +
 				"OPTIONAL MATCH u-[:IN]->(fgroup: FunctionalGroup) " +
 				"OPTIONAL MATCH u-[:ADMINISTRATIVE_ATTACHMENT]->(admStruct: Structure) " +
-				"RETURN DISTINCT u.profiles as type, " +
-				"COLLECT(distinct s) as structureNodes, " +
-				"COLLECT(distinct [f.externalId, rf.scope]) as functions, " +
-				"CASE WHEN child IS NULL THEN [] ELSE collect(distinct {id: child.id, displayName: child.displayName, externalId: child.externalId}) END as children, " +
-				"CASE WHEN parent IS NULL THEN [] ELSE collect(distinct {id: parent.id, displayName: parent.displayName, externalId: parent.externalId}) END as parents, " +
-				"CASE WHEN fgroup IS NULL THEN [] ELSE collect(distinct {id: fgroup.id, name: fgroup.name}) END as functionalGroups, " +
-				"CASE WHEN admStruct IS NULL THEN [] ELSE collect(distinct {id: admStruct.id}) END as administrativeStructures, " +
+				"WITH u," +
+				"COLLECT(distinct s) as structureNodes," +
+				"CASE WHEN child IS NULL THEN [] ELSE collect(distinct {id: child.id, displayName: child.displayName, firstName: child.firstName, lastName: child.lastName, externalId: child.externalId}) END as children," +
+				"CASE WHEN parent IS NULL THEN [] ELSE collect(distinct {id: parent.id, displayName: parent.displayName, firstName: parent.firstName, lastName: parent.lastName, externalId: parent.externalId}) END as parents," +
+				"CASE WHEN fgroup IS NULL THEN [] ELSE collect(distinct {id: fgroup.id, name: fgroup.name}) END as functionalGroups," +
+				"CASE WHEN admStruct IS NULL THEN [] ELSE collect(distinct {id: admStruct.id}) END as administrativeStructures " +
+				"OPTIONAL MATCH u-[rf:HAS_FUNCTION]->fg-[:CONTAINS_FUNCTION*0..1]->(f:Function) " +
+				"RETURN " +
+				"DISTINCT u.profiles as type," +
+				"structureNodes," +
+				"COLLECT(distinct [f.externalId, rf.scope]) as functions," +
+				"children," +
+				"parents," +
+				"functionalGroups," +
+				"administrativeStructures," +
 				"u";
 		neo.execute(query, new JsonObject().putString("id", id), fullNodeMergeHandler("u", result, "structureNodes"));
 	}
@@ -489,9 +496,13 @@ public class DefaultUserService implements UserService {
 		String query =
 				"MATCH (n:Group)<-[:IN]-(u:User) " +
 				"WHERE n.id = {groupId} " + condition +
-				"OPTIONAL MATCH n-[:DEPENDS*0..1]->(pg:ProfileGroup)-[:HAS_PROFILE]->(profile:Profile) " +
+				"OPTIONAL MATCH (n)-[:DEPENDS*0..1]->(:ProfileGroup)-[:HAS_PROFILE]->(profile:Profile) " +
+				"OPTIONAL MATCH (u)-[:IN]->(pg:ProfileGroup)-[:DEPENDS]->(s:Structure) " +
+				"OPTIONAL MATCH (pg)-[:HAS_PROFILE]->(pro:Profile) " +
 				"RETURN distinct u.id as id, u.login as login," +
-				" u.displayName as username, u.firstName as firstName, u.lastName as lastName, profile.name as type " +
+				"u.displayName as username, u.firstName as firstName, u.lastName as lastName, profile.name as type," +
+				"CASE WHEN s IS NULL THEN [] ELSE COLLECT(DISTINCT {id: s.id, name: s.name}) END as structures," +
+				"CASE WHEN pro IS NULL THEN NULL ELSE HEAD(COLLECT(DISTINCT pro.name)) END as profile " +
 				"ORDER BY username ";
 		JsonObject params = new JsonObject();
 		params.putString("groupId", groupId);

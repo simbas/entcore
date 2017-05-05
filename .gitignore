@@ -25,3 +25,12 @@ developer.id
 *.mod.json
 .jshintrc
 Thumbs.db
+sample-*/
+node_modules
+vertx_classpath.txt
+.tern-project
+.htmlhintrc
+javaconfig.json
+classpath.txt
+.vscode/
+bower_components/
