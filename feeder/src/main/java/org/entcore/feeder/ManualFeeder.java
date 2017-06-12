@@ -19,14 +19,11 @@
 
 package org.entcore.feeder;
 
-import au.com.bytecode.opencsv.CSV;
-import au.com.bytecode.opencsv.CSVReadProc;
 import org.entcore.common.events.EventStore;
 import org.entcore.common.events.EventStoreFactory;
 import org.entcore.common.neo4j.Neo4j;
 import org.entcore.common.neo4j.Neo4jUtils;
 import org.entcore.common.user.UserInfos;
-import org.entcore.feeder.be1d.Be1dFeeder;
 import org.entcore.feeder.dictionary.structures.*;
 import org.entcore.feeder.exceptions.TransactionException;
 import org.entcore.feeder.exceptions.ValidationException;
@@ -38,16 +35,10 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
-import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.regex.Matcher;
-
-import static org.entcore.feeder.utils.FeederHelper.detectCharset;
 
 public class ManualFeeder extends BusModBase {
 
@@ -493,217 +484,217 @@ public class ManualFeeder extends BusModBase {
 		});
 	}
 
-	public void csvClassStudent(final Message<JsonObject> message) {
-		final String classId = message.body().getString("classId");
-		if (classId == null || classId.trim().isEmpty()) {
-			sendError(message, "invalid.class.id");
-			return;
-		}
-		final String csv = message.body().getString("csv");
-		if (csv == null || csv.trim().isEmpty()) {
-			sendError(message, "missing.csv");
-			return;
-		}
-		String q = "MATCH (c:Class {id : {id}})-[:BELONGS]->(s:Structure) " +
-				   "RETURN c.externalId as cId, s.externalId as sId";
-		neo4j.execute(q, new JsonObject().putString("id", classId), new Handler<Message<JsonObject>>() {
-			@Override
-			public void handle(Message<JsonObject> r) {
-				JsonArray result = r.body().getArray("result");
-				if ("ok".equals(r.body().getString("status")) && result != null && result.size() == 1) {
-					JsonObject j = result.get(0);
-					final String structureExternalId = j.getString("sId");
-					final String classExternalId = j.getString("cId");
-					if (structureExternalId == null || classExternalId == null) {
-						sendError(message, "invalid.class.id");
-						return;
-					}
-					String charset = detectCharset(csv);
-					CSV csvParser = CSV
-							.ignoreLeadingWhiteSpace()
-							.separator(';')
-							.skipLines(1)
-							.charset(charset)
-							.create();
-					final StatementsBuilder statementsBuilder = new StatementsBuilder();
-					final JsonObject params = new JsonObject().putString("classId", classId);
-					final String query =
-							"MATCH (c:`Class` { id : {classId}})<-[:DEPENDS]-(csg:ProfileGroup)" +
-							"-[:DEPENDS]->(ssg:ProfileGroup)-[:HAS_PROFILE]->(p:Profile { name : 'Student'}) " +
-							"CREATE csg<-[:IN]-(u:User {props}), " +
-							"ssg<-[:IN]-u " +
-							"RETURN DISTINCT u.id as id";
-					final Validator v = profiles.get("Student");
-					final JsonArray errors = new JsonArray();
-					csvParser.readAndClose(new StringReader(csv), new CSVReadProc() {
+//	public void csvClassStudent(final Message<JsonObject> message) {
+//		final String classId = message.body().getString("classId");
+//		if (classId == null || classId.trim().isEmpty()) {
+//			sendError(message, "invalid.class.id");
+//			return;
+//		}
+//		final String csv = message.body().getString("csv");
+//		if (csv == null || csv.trim().isEmpty()) {
+//			sendError(message, "missing.csv");
+//			return;
+//		}
+//		String q = "MATCH (c:Class {id : {id}})-[:BELONGS]->(s:Structure) " +
+//				   "RETURN c.externalId as cId, s.externalId as sId";
+//		neo4j.execute(q, new JsonObject().putString("id", classId), new Handler<Message<JsonObject>>() {
+//			@Override
+//			public void handle(Message<JsonObject> r) {
+//				JsonArray result = r.body().getArray("result");
+//				if ("ok".equals(r.body().getString("status")) && result != null && result.size() == 1) {
+//					JsonObject j = result.get(0);
+//					final String structureExternalId = j.getString("sId");
+//					final String classExternalId = j.getString("cId");
+//					if (structureExternalId == null || classExternalId == null) {
+//						sendError(message, "invalid.class.id");
+//						return;
+//					}
+//					String charset = detectCharset(csv);
+//					CSV csvParser = CSV
+//							.ignoreLeadingWhiteSpace()
+//							.separator(';')
+//							.skipLines(1)
+//							.charset(charset)
+//							.create();
+//					final StatementsBuilder statementsBuilder = new StatementsBuilder();
+//					final JsonObject params = new JsonObject().putString("classId", classId);
+//					final String query =
+//							"MATCH (c:`Class` { id : {classId}})<-[:DEPENDS]-(csg:ProfileGroup)" +
+//							"-[:DEPENDS]->(ssg:ProfileGroup)-[:HAS_PROFILE]->(p:Profile { name : 'Student'}) " +
+//							"CREATE csg<-[:IN]-(u:User {props}), " +
+//							"ssg<-[:IN]-u " +
+//							"RETURN DISTINCT u.id as id";
+//					final Validator v = profiles.get("Student");
+//					final JsonArray errors = new JsonArray();
+//					csvParser.readAndClose(new StringReader(csv), new CSVReadProc() {
+//
+//						@Override
+//						public void procRow(int rowIdx, String... values) {
+//							int i = 0;
+//							JsonObject props = new JsonObject();
+//							while (i < values.length && !"#break#".equals(Be1dFeeder.studentHeader[i])) {
+//								if ("birthDate".equals(Be1dFeeder.studentHeader[i]) && values[i] != null) {
+//									Matcher m;
+//									if (values[i] != null &&
+//											(m = Be1dFeeder.frenchDatePatter.matcher(values[i])).find()) {
+//										props.putString(Be1dFeeder.studentHeader[i],
+//												m.group(3) + "-" + m.group(2) + "-" + m.group(1));
+//									} else {
+//										props.putString(Be1dFeeder.studentHeader[i], values[i].trim());
+//									}
+//								} else if (!"#skip#".equals(Be1dFeeder.studentHeader[i])) {
+//									if (values[i] != null && !values[i].trim().isEmpty()) {
+//										props.putString(Be1dFeeder.studentHeader[i], values[i].trim());
+//									}
+//								}
+//								i++;
+//							}
+//							props.putArray("structures", new JsonArray().add(structureExternalId));
+//							String c = props.getString("classes");
+//							props.putArray("classes", new JsonArray().add(classExternalId));
+//							generateUserExternalId(props, c, structureExternalId);
+//							String error = v.validate(props);
+//							if (error != null) {
+//								String e = error + (rowIdx + 2);
+//								sendError(message, e);
+//								errors.add(e);
+//								return;
+//							}
+//							props.putString("source", "CLASS_PARAM");
+//							statementsBuilder.add(query, params.copy().putObject("props", props));
+//						}
+//					});
+//					if (errors.size() == 0) {
+//						neo4j.executeTransaction(statementsBuilder.build(), null, true,
+//								new Handler<Message<JsonObject>>() {
+//									@Override
+//									public void handle(Message<JsonObject> res) {
+//										message.reply(res.body());
+//									}
+//								});
+//					}
+//				} else {
+//					sendError(message, "invalid.class.id");
+//				}
+//			}
+//		});
+//	}
+//
+//	public void csvClassRelative(final Message<JsonObject> message) {
+//		final String classId = message.body().getString("classId");
+//		if (classId == null || classId.trim().isEmpty()) {
+//			sendError(message, "invalid.class.id");
+//			return;
+//		}
+//		final String csv = message.body().getString("csv", "").split("(;;;;;;;;;;;;;;;;;;;;|\n\n|\r\n\r\n)")[0];
+//		if (csv == null || csv.trim().isEmpty()) {
+//			sendError(message, "missing.csv");
+//			return;
+//		}
+//		String q = "MATCH (c:Class {id : {id}})-[:BELONGS]->(s:Structure) " +
+//				   "RETURN c.externalId as cId, s.externalId as sId";
+//		neo4j.execute(q, new JsonObject().putString("id", classId), new Handler<Message<JsonObject>>() {
+//			@Override
+//			public void handle(Message<JsonObject> r) {
+//				JsonArray result = r.body().getArray("result");
+//				if ("ok".equals(r.body().getString("status")) && result != null && result.size() == 1) {
+//					JsonObject j = result.get(0);
+//					final String structureExternalId = j.getString("sId");
+//					final String classExternalId = j.getString("cId");
+//					if (structureExternalId == null || classExternalId == null) {
+//						sendError(message, "invalid.class.id");
+//						return;
+//					}
+//					String charset = detectCharset(csv);
+//					CSV csvParser = CSV
+//							.ignoreLeadingWhiteSpace()
+//							.separator(';')
+//							.skipLines(1)
+//							.charset(charset)
+//							.create();
+//
+//					final StatementsBuilder statementsBuilder = new StatementsBuilder();
+//					final JsonObject params = new JsonObject().putString("classId", classId);
+//					final String query =
+//							"MATCH (c:`Class` { id : {classId}})<-[:DEPENDS]-(csg:ProfileGroup)" +
+//							"-[:DEPENDS]->(ssg:ProfileGroup)-[:HAS_PROFILE]->(p:Profile { name : 'Relative'}) " +
+//							"CREATE csg<-[:IN]-(u:User {props}), " +
+//							"ssg<-[:IN]-u " +
+//							"WITH u, c " +
+//							"MATCH (student:User)-[:IN]->(pg:ProfileGroup)-[:DEPENDS]->(c) " +
+//							"WHERE student.externalId IN {linkStudents} " +
+//							"CREATE student-[:RELATED]->u " +
+//							"RETURN DISTINCT u.id as id";
+//					final Validator v = profiles.get("Relative");
+//					final JsonArray errors = new JsonArray();
+//					csvParser.readAndClose(new StringReader(csv), new CSVReadProc() {
+//
+//						@Override
+//						public void procRow(int rowIdx, String... values) {
+//							int i = 0;
+//							JsonObject props = new JsonObject();
+//							while (i < Be1dFeeder.relativeHeader.length) {
+//								if (!"#skip#".equals(Be1dFeeder.relativeHeader[i])) {
+//									if (values[i] != null && !values[i].trim().isEmpty()) {
+//										props.putString(Be1dFeeder.relativeHeader[i], values[i].trim());
+//									}
+//								}
+//								i++;
+//							}
+//							JsonArray linkStudents = new JsonArray();
+//							for (i = 12; i < values.length; i += 4) {
+//								String mapping = structureExternalId + values[i].trim() +
+//										values[i + 1].trim() + values[i + 2].trim() + values[i + 3].trim();
+//								if (mapping.trim().isEmpty()) continue;
+//								try {
+//									linkStudents.add(Hash.sha1(mapping.getBytes("UTF-8")));
+//								} catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
+//									logger.error(e.getMessage(), e);
+//									errors.add(e.getMessage());
+//									sendError(message, e.getMessage());
+//									return;
+//								}
+//							}
+//							generateUserExternalId(props, String.valueOf(rowIdx), structureExternalId);
+//							String error = v.validate(props);
+//							if (error != null) {
+//								String e = error + (rowIdx + 2);
+//								sendError(message, e);
+//								errors.add(e);
+//								return;
+//							}
+//							props.putString("source", "CLASS_PARAM");
+//							statementsBuilder.add(query, params.copy()
+//									.putObject("props", props).putArray("linkStudents", linkStudents));
+//						}
+//					});
+//					if (errors.size() == 0) {
+//						neo4j.executeTransaction(statementsBuilder.build(), null, true,
+//								new Handler<Message<JsonObject>>() {
+//									@Override
+//									public void handle(Message<JsonObject> res) {
+//										message.reply(res.body());
+//									}
+//								});
+//					}
+//				} else {
+//					sendError(message, "invalid.class.id");
+//				}
+//			}
+//		});
+//	}
 
-						@Override
-						public void procRow(int rowIdx, String... values) {
-							int i = 0;
-							JsonObject props = new JsonObject();
-							while (i < values.length && !"#break#".equals(Be1dFeeder.studentHeader[i])) {
-								if ("birthDate".equals(Be1dFeeder.studentHeader[i]) && values[i] != null) {
-									Matcher m;
-									if (values[i] != null &&
-											(m = Be1dFeeder.frenchDatePatter.matcher(values[i])).find()) {
-										props.putString(Be1dFeeder.studentHeader[i],
-												m.group(3) + "-" + m.group(2) + "-" + m.group(1));
-									} else {
-										props.putString(Be1dFeeder.studentHeader[i], values[i].trim());
-									}
-								} else if (!"#skip#".equals(Be1dFeeder.studentHeader[i])) {
-									if (values[i] != null && !values[i].trim().isEmpty()) {
-										props.putString(Be1dFeeder.studentHeader[i], values[i].trim());
-									}
-								}
-								i++;
-							}
-							props.putArray("structures", new JsonArray().add(structureExternalId));
-							String c = props.getString("classes");
-							props.putArray("classes", new JsonArray().add(classExternalId));
-							generateUserExternalId(props, c, structureExternalId);
-							String error = v.validate(props);
-							if (error != null) {
-								String e = error + (rowIdx + 2);
-								sendError(message, e);
-								errors.add(e);
-								return;
-							}
-							props.putString("source", "CLASS_PARAM");
-							statementsBuilder.add(query, params.copy().putObject("props", props));
-						}
-					});
-					if (errors.size() == 0) {
-						neo4j.executeTransaction(statementsBuilder.build(), null, true,
-								new Handler<Message<JsonObject>>() {
-									@Override
-									public void handle(Message<JsonObject> res) {
-										message.reply(res.body());
-									}
-								});
-					}
-				} else {
-					sendError(message, "invalid.class.id");
-				}
-			}
-		});
-	}
-
-	public void csvClassRelative(final Message<JsonObject> message) {
-		final String classId = message.body().getString("classId");
-		if (classId == null || classId.trim().isEmpty()) {
-			sendError(message, "invalid.class.id");
-			return;
-		}
-		final String csv = message.body().getString("csv", "").split("(;;;;;;;;;;;;;;;;;;;;|\n\n|\r\n\r\n)")[0];
-		if (csv == null || csv.trim().isEmpty()) {
-			sendError(message, "missing.csv");
-			return;
-		}
-		String q = "MATCH (c:Class {id : {id}})-[:BELONGS]->(s:Structure) " +
-				   "RETURN c.externalId as cId, s.externalId as sId";
-		neo4j.execute(q, new JsonObject().putString("id", classId), new Handler<Message<JsonObject>>() {
-			@Override
-			public void handle(Message<JsonObject> r) {
-				JsonArray result = r.body().getArray("result");
-				if ("ok".equals(r.body().getString("status")) && result != null && result.size() == 1) {
-					JsonObject j = result.get(0);
-					final String structureExternalId = j.getString("sId");
-					final String classExternalId = j.getString("cId");
-					if (structureExternalId == null || classExternalId == null) {
-						sendError(message, "invalid.class.id");
-						return;
-					}
-					String charset = detectCharset(csv);
-					CSV csvParser = CSV
-							.ignoreLeadingWhiteSpace()
-							.separator(';')
-							.skipLines(1)
-							.charset(charset)
-							.create();
-
-					final StatementsBuilder statementsBuilder = new StatementsBuilder();
-					final JsonObject params = new JsonObject().putString("classId", classId);
-					final String query =
-							"MATCH (c:`Class` { id : {classId}})<-[:DEPENDS]-(csg:ProfileGroup)" +
-							"-[:DEPENDS]->(ssg:ProfileGroup)-[:HAS_PROFILE]->(p:Profile { name : 'Relative'}) " +
-							"CREATE csg<-[:IN]-(u:User {props}), " +
-							"ssg<-[:IN]-u " +
-							"WITH u, c " +
-							"MATCH (student:User)-[:IN]->(pg:ProfileGroup)-[:DEPENDS]->(c) " +
-							"WHERE student.externalId IN {linkStudents} " +
-							"CREATE student-[:RELATED]->u " +
-							"RETURN DISTINCT u.id as id";
-					final Validator v = profiles.get("Relative");
-					final JsonArray errors = new JsonArray();
-					csvParser.readAndClose(new StringReader(csv), new CSVReadProc() {
-
-						@Override
-						public void procRow(int rowIdx, String... values) {
-							int i = 0;
-							JsonObject props = new JsonObject();
-							while (i < Be1dFeeder.relativeHeader.length) {
-								if (!"#skip#".equals(Be1dFeeder.relativeHeader[i])) {
-									if (values[i] != null && !values[i].trim().isEmpty()) {
-										props.putString(Be1dFeeder.relativeHeader[i], values[i].trim());
-									}
-								}
-								i++;
-							}
-							JsonArray linkStudents = new JsonArray();
-							for (i = 12; i < values.length; i += 4) {
-								String mapping = structureExternalId + values[i].trim() +
-										values[i + 1].trim() + values[i + 2].trim() + values[i + 3].trim();
-								if (mapping.trim().isEmpty()) continue;
-								try {
-									linkStudents.add(Hash.sha1(mapping.getBytes("UTF-8")));
-								} catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
-									logger.error(e.getMessage(), e);
-									errors.add(e.getMessage());
-									sendError(message, e.getMessage());
-									return;
-								}
-							}
-							generateUserExternalId(props, String.valueOf(rowIdx), structureExternalId);
-							String error = v.validate(props);
-							if (error != null) {
-								String e = error + (rowIdx + 2);
-								sendError(message, e);
-								errors.add(e);
-								return;
-							}
-							props.putString("source", "CLASS_PARAM");
-							statementsBuilder.add(query, params.copy()
-									.putObject("props", props).putArray("linkStudents", linkStudents));
-						}
-					});
-					if (errors.size() == 0) {
-						neo4j.executeTransaction(statementsBuilder.build(), null, true,
-								new Handler<Message<JsonObject>>() {
-									@Override
-									public void handle(Message<JsonObject> res) {
-										message.reply(res.body());
-									}
-								});
-					}
-				} else {
-					sendError(message, "invalid.class.id");
-				}
-			}
-		});
-	}
-
-	private void generateUserExternalId(JsonObject props, String c, String structureExternalId) {
-		String mapping = structureExternalId+props.getString("surname", "")+
-				props.getString("lastName", "")+props.getString("firstName", "")+
-				props.getString("email","")+props.getString("title","")+
-				props.getString("homePhone","")+props.getString("mobile","")+c;
-		try {
-			props.putString("externalId", Hash.sha1(mapping.getBytes("UTF-8")));
-		} catch (NoSuchAlgorithmException|UnsupportedEncodingException e) {
-			logger.error(e.getMessage(), e);
-		}
-	}
+//	private void generateUserExternalId(JsonObject props, String c, String structureExternalId) {
+//		String mapping = structureExternalId+props.getString("surname", "")+
+//				props.getString("lastName", "")+props.getString("firstName", "")+
+//				props.getString("email","")+props.getString("title","")+
+//				props.getString("homePhone","")+props.getString("mobile","")+c;
+//		try {
+//			props.putString("externalId", Hash.sha1(mapping.getBytes("UTF-8")));
+//		} catch (NoSuchAlgorithmException|UnsupportedEncodingException e) {
+//			logger.error(e.getMessage(), e);
+//		}
+//	}
 
 	public void createFunction(final Message<JsonObject> message) {
 		final JsonObject function = getMandatoryObject("data", message);
