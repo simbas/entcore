@@ -86,7 +86,6 @@ public class Feeder extends BusModBase implements Handler<Message<JsonObject>> {
 		defaultFeed = container.config().getString("feeder", "AAF");
 		feeds.put("AAF", new AafFeeder(vertx, getFilesDirectory("AAF")));
 		feeds.put("AAF1D", new Aaf1dFeeder(vertx, getFilesDirectory("AAF1D")));
-//		feeds.put("BE1D", new Be1dFeeder(vertx, getFilesDirectory("BE1D")));
 		feeds.put("CSV", new CsvFeeder(vertx));
 		final long deleteUserDelay = container.config().getLong("delete-user-delay", 90 * 24 * 3600 * 1000l);
 		final long preDeleteUserDelay = container.config().getLong("pre-delete-user-delay", 90 * 24 * 3600 * 1000l);
@@ -347,10 +346,6 @@ public class Feeder extends BusModBase implements Handler<Message<JsonObject>> {
 			case "CSV":
 				v = new CsvValidator(vertx, acceptLanguage, message.body().getObject("columnsMapping"));
 				break;
-//			case "BE1D":
-//				v = new Be1dValidator(vertx, container.config().getString("uai-separator", "_"),
-//						acceptLanguage);
-//				break;
 			case "AAF":
 			case "AAF1D":
 				final Report report = new Report(acceptLanguage);
@@ -386,7 +381,7 @@ public class Feeder extends BusModBase implements Handler<Message<JsonObject>> {
 								for (Object o : res) {
 									if (!(o instanceof JsonObject)) continue;
 									JsonObject j = (JsonObject) o;
-									String filename = j.getString("profile"); // TODO manage BE1D
+									String filename = j.getString("profile");
 									r.addUser(filename, j.putString("state", r.translate(Report.State.DELETED.name()))
 											.putString("translatedProfile", r.translate(j.getString("profile"))));
 								}
