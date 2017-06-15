@@ -27,14 +27,12 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.file.FileSystem;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ImportInfos {
@@ -53,7 +51,7 @@ public class ImportInfos {
 	private String id;
 	private String structureId;
 	private String structureExternalId;
-
+	private Map<String, Object> columnsMapping;
 	private String language;
 
 	public String getFeeder() {
@@ -126,6 +124,14 @@ public class ImportInfos {
 
 	public void setLanguage(String language) {
 		this.language = language;
+	}
+
+	public Map<String, Object> getColumnsMapping() {
+		return columnsMapping;
+	}
+
+	public void setColumnsMapping(JsonObject columnsMapping) {
+		this.columnsMapping = (columnsMapping != null) ? columnsMapping.toMap() : null;
 	}
 
 	public void validate(final boolean isAdmc, final Vertx vertx, final Handler<AsyncResult<String>> handler) {

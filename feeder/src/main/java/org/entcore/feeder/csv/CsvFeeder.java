@@ -52,12 +52,12 @@ public class CsvFeeder implements Feed {
 	public static final Pattern frenchDatePatter = Pattern.compile("^([0-9]{2})/([0-9]{2})/([0-9]{4})$");
 	private static final Logger log = LoggerFactory.getLogger(CsvFeeder.class);
 	public static final long DEFAULT_STUDENT_SEED = 0l;
-	private final ColumnsMapper columnsMapper;
+	private final ProfileColumnsMapper columnsMapper;
 	private final Vertx vertx;
 
-	public CsvFeeder(Vertx vertx, JsonObject additionnalsMappings) {
+	public CsvFeeder(Vertx vertx) {
 		this.vertx = vertx;
-		this.columnsMapper = new ColumnsMapper(additionnalsMappings);
+		this.columnsMapper = new ProfileColumnsMapper();
 	}
 
 	@Override
@@ -185,12 +185,13 @@ public class CsvFeeder implements Feed {
 				@Override
 				public void handle(String charset) {
 					try {
+						final String profile = file.substring(file.lastIndexOf(File.separator) + 1).replaceFirst(".csv", "");
 						CSVReader csvReader = getCsvReader(file, charset);
 						String[] strings;
 						int i = 0;
 						while ((strings = csvReader.readNext()) != null) {
 							if (i == 0) {
-								columnsMapper.getColumsNames(strings, columns, handler);
+								columnsMapper.getColumsNames(profile, strings, columns, handler);
 								if (columns.isEmpty()) {
 									handler.handle(new ResultMessage().error("invalid.columns"));
 									return;
@@ -271,7 +272,7 @@ public class CsvFeeder implements Feed {
 			int i = 0;
 			while ((strings = csvParser.readNext()) != null) {
 				if (i == 0) {
-					columnsMapper.getColumsNames(strings, columns, handler);
+					columnsMapper.getColumsNames(profile, strings, columns, handler);
 				} else if (!columns.isEmpty()) {
 					JsonObject user = new JsonObject();
 					user.putArray("structures", new JsonArray().add(structure.getExternalId()));
