@@ -19,7 +19,10 @@
 
 package org.entcore.feeder.utils;
 
+import fr.wseduc.mongodb.MongoDb;
 import fr.wseduc.webutils.I18n;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
@@ -31,7 +34,7 @@ import java.util.UUID;
 public class Report {
 
 	public static final Logger log = LoggerFactory.getLogger(Report.class);
-	private static final String MAPPINGS = "mappings";
+	public static final String FILES = "files";
 	public final JsonObject result;
 	private final I18n i18n = I18n.getInstance();
 	public final String acceptLanguage;
@@ -42,7 +45,9 @@ public class Report {
 		final JsonObject errors = new JsonObject();
 		final JsonObject files = new JsonObject();
 		JsonObject ignored = new JsonObject();
-		result = new JsonObject().putObject("errors", errors).putObject("files", files).putObject("ignored", ignored);
+		result = new JsonObject().putString("_id", UUID.randomUUID().toString()).putObject("created", MongoDb.now())
+				.putObject("errors", errors).putObject(FILES, files).putObject("ignored", ignored)
+				.putString("source", getSource());
 	}
 
 	public Report addError(String error) {
@@ -84,10 +89,10 @@ public class Report {
 	}
 
 	public void addUser(String file, JsonObject props) {
-		JsonArray f = result.getObject("files").getArray(file);
+		JsonArray f = result.getObject(FILES).getArray(file);
 		if (f == null) {
 			f = new JsonArray();
-			result.getObject("files").putArray(file, f);
+			result.getObject(FILES).putArray(file, f);
 		}
 		f.addObject(props);
 	}
@@ -111,8 +116,8 @@ public class Report {
 
 	public JsonArray getUsersExternalId() {
 		final JsonArray res = new JsonArray();
-		for (String f : result.getObject("files").getFieldNames()) {
-			JsonArray a = result.getObject("files").getArray(f);
+		for (String f : result.getObject(FILES).getFieldNames()) {
+			JsonArray a = result.getObject(FILES).getArray(f);
 			if (a != null) {
 				for (Object o : a) {
 					if (!(o instanceof JsonObject)) continue;
@@ -130,23 +135,12 @@ public class Report {
 		return result.getObject("errors", new JsonObject()).size() > 0;
 	}
 
-	public void addMapping(String profile, JsonObject mappping) {
-		JsonObject mappings = result.getObject(MAPPINGS);
-		if (mappings == null) {
-			mappings = new JsonObject();
-			result.putObject(MAPPINGS, mappings);
-		}
-		mappings.putObject(profile, mappping);
+	public void persist(Handler<Message<JsonObject>> handler) {
+		MongoDb.getInstance().save("imports", this.getResult(), handler);
 	}
 
-	public JsonObject getMappings() {
-		return result.getObject(MAPPINGS);
-	}
-
-	public void setMappings(JsonObject mappings) {
-		if (mappings != null && mappings.size() > 0) {
-			result.putObject(MAPPINGS, mappings);
-		}
+	public String getSource() {
+		return "REPORT";
 	}
 
 }

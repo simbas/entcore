@@ -503,8 +503,9 @@ public class CsvFeeder implements Feed {
 		}
 		String mapping = structure.getExternalId()+props.getString("surname", "")+
 				props.getString("lastName", "")+props.getString("firstName", "")+
-				props.getString("email","")+props.getString("title","")+
-				props.getString("homePhone","")+props.getString("mobile","")+c+seed;
+//				props.getString("email","")+props.getString("title","")+
+//				props.getString("homePhone","")+props.getString("mobile","")+
+				c+seed;
 		try {
 			props.putString("externalId", Hash.sha1(mapping.getBytes("UTF-8")));
 		} catch (NoSuchAlgorithmException|UnsupportedEncodingException e) {
