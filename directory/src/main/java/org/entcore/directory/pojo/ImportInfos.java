@@ -49,6 +49,7 @@ public class ImportInfos {
 	private String structureId;
 	private String structureExternalId;
 	private Map<String, Object> mappings;
+	private Map<String, Object> classesMapping;
 	private String language;
 
 	public String getFeeder() {
@@ -137,6 +138,14 @@ public class ImportInfos {
 
 	public void setMappings(JsonObject mappings) {
 		this.mappings = (mappings != null) ? mappings.toMap() : null;
+	}
+
+	public Map<String, Object> getClassesMapping() {
+		return classesMapping;
+	}
+
+	public void setClassesMapping(JsonObject classesMapping) {
+		this.classesMapping = (classesMapping != null) ? classesMapping.toMap() : null;
 	}
 
 	public void validate(final boolean isAdmc, final Vertx vertx, final Handler<AsyncResult<String>> handler) {
