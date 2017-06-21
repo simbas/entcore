@@ -96,6 +96,7 @@ public class MappingFinder {
 			int rowIdx = 0;
 			while ((values = csvReader.readNext()) != null) {
 				if (emptyLine(values)) {
+					rowIdx++;
 					continue;
 				}
 				final List<String> line = new LinkedList<>(Arrays.asList(values));
