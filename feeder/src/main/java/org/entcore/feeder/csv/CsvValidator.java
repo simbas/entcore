@@ -42,6 +42,7 @@ import java.util.regex.Matcher;
 import static fr.wseduc.webutils.Utils.getOrElse;
 import static fr.wseduc.webutils.Utils.isNotEmpty;
 import static org.entcore.feeder.csv.CsvFeeder.*;
+import static org.entcore.feeder.utils.CSVUtil.emptyLine;
 import static org.entcore.feeder.utils.CSVUtil.getCsvReader;
 
 public class CsvValidator extends CsvReport implements ImportValidator {
@@ -295,7 +296,7 @@ public class CsvValidator extends CsvReport implements ImportValidator {
 							j++;
 						}
 					}
-				} else {
+				} else if (!emptyLine(strings)) {
 					for (Integer idx : classesIdx) {
 						if (isNotEmpty(strings[idx].trim())) {
 							mapping.add(strings[idx].trim());
@@ -317,8 +318,16 @@ public class CsvValidator extends CsvReport implements ImportValidator {
 			CSVReader csvParser = getCsvReader(path, charset);
 
 			String[] strings;
-			if ((strings = csvParser.readNext()) != null) {
-				addMapping(profile, columnsMapper.getColumsMapping(profile, strings));
+			int columnsNumber = -1;
+			int i = 0;
+			while ((strings = csvParser.readNext()) != null) {
+				if (i == 0) {
+					addMapping(profile, columnsMapper.getColumsMapping(profile, strings));
+					columnsNumber = strings.length;
+				} else if (!emptyLine(strings) && columnsNumber != strings.length) {
+					addErrorByFile(profile, "bad.columns.number", "" + (i + 1));
+				}
+				i++;
 			}
 		} catch (Exception e) {
 			addError(profile, "csv.exception");
@@ -357,7 +366,7 @@ public class CsvValidator extends CsvReport implements ImportValidator {
 					} else {
 						validateFile(path, profile, columns, null, charset, handler);
 					}
-				} else if (filterExternalId.get() >= 0) {
+				} else if (filterExternalId.get() >= 0 && !emptyLine(strings)) {
 					if (strings[filterExternalId.get()] != null && !strings[filterExternalId.get()].isEmpty()) {
 						externalIds.addString(strings[filterExternalId.get()]);
 					} else if (findUsersEnabled) { // TODO add check to empty lines
@@ -458,9 +467,18 @@ public class CsvValidator extends CsvReport implements ImportValidator {
 				try {
 					final JsonObject classMapping = getClassesMapping(profile);
 					CSVReader csvParser = getCsvReader(path, charset, 1);
+					final int nbColumns = columns.size();
 					String[] strings;
 					int i = 1;
 					while ((strings = csvParser.readNext()) != null) {
+						if (emptyLine(strings)) {
+							i++;
+							continue;
+						}
+						if (strings.length != nbColumns) {
+							addErrorByFile(profile, "bad.columns.number", "" + ++i);
+							continue;
+						}
 						final JsonArray classesNames = new JsonArray();
 						JsonObject user = new JsonObject();
 						JsonArray linkStudents = new JsonArray();
