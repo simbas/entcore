@@ -35,6 +35,7 @@ public class Report {
 
 	public static final Logger log = LoggerFactory.getLogger(Report.class);
 	public static final String FILES = "files";
+	public static final String PROFILES = "profiles";
 	public final JsonObject result;
 	private final I18n i18n = I18n.getInstance();
 	public final String acceptLanguage;
@@ -95,6 +96,15 @@ public class Report {
 			result.getObject(FILES).putArray(file, f);
 		}
 		f.addObject(props);
+	}
+
+	public void addProfile(String profile) {
+		JsonArray f = result.getArray(PROFILES);
+		if (f == null) {
+			f = new JsonArray();
+			result.putArray(PROFILES, f);
+		}
+		f.addString(profile);
 	}
 
 	public void addIgnored(String file, String reason, JsonObject object) {

@@ -28,7 +28,6 @@ import org.entcore.feeder.aaf.AafFeeder;
 import org.entcore.feeder.aaf1d.Aaf1dFeeder;
 import org.entcore.feeder.csv.CsvFeeder;
 import org.entcore.feeder.csv.CsvImportsLauncher;
-import org.entcore.feeder.csv.CsvReport;
 import org.entcore.feeder.csv.CsvValidator;
 import org.entcore.feeder.dictionary.structures.*;
 import org.entcore.feeder.timetable.AbstractTimetableImporter;
@@ -401,7 +400,6 @@ public class Feeder extends BusModBase implements Handler<Message<JsonObject>> {
 							.putObject("mappings", v.getMappings())
 							.putObject("availableFields", v.getColumnsMapper().availableFields()));
 				} else {
-//					sendError(message, "column.mapping.error");
 					sendOK(message, new JsonObject().putObject("result", v.getResult()));
 				}
 			}
@@ -451,8 +449,9 @@ public class Feeder extends BusModBase implements Handler<Message<JsonObject>> {
 				};
 				if (preDelete && structureExternalId != null && !r.containsErrors()) {
 					final JsonArray externalIds = r.getUsersExternalId();
+					final JsonArray profiles = r.getResult().getArray(Report.PROFILES);
 					new User.PreDeleteTask(0).findMissingUsersInStructure(
-							structureExternalId, source, externalIds, new Handler<Message<JsonObject>>() {
+							structureExternalId, source, externalIds, profiles, new Handler<Message<JsonObject>>() {
 						@Override
 						public void handle(Message<JsonObject> event) {
 							final JsonArray res = event.body().getArray("result");
@@ -591,11 +590,13 @@ public class Feeder extends BusModBase implements Handler<Message<JsonObject>> {
 								sendError(message, "import.error");
 								return;
 							}
-							JsonArray existingUsers = importReport.getResult().getArray("usersExternalIds");
+							final JsonObject ir = importReport.getResult();
+							final JsonArray existingUsers = ir.getArray("usersExternalIds");
+							final JsonArray profiles = ir.getArray(Report.PROFILES);
 							if (preDelete && structureExternalId != null && existingUsers != null &&
 									existingUsers.size() > 0 && !importReport.containsErrors()) {
 								new User.PreDeleteTask(0).preDeleteMissingUsersInStructure(
-										structureExternalId, source, existingUsers, new Handler<Message<JsonObject>>() {
+										structureExternalId, source, existingUsers, profiles, new Handler<Message<JsonObject>>() {
 									@Override
 									public void handle(Message<JsonObject> event) {
 										if (!"ok".equals(event.body().getString("status"))) {
