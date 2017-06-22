@@ -276,7 +276,7 @@ public class CsvFeeder implements Feed {
 			final List<String> columns = new ArrayList<>();
 			String[] strings;
 			int i = 0;
-			while ((strings = csvParser.readNext()) != null) {
+			csvParserWhile : while ((strings = csvParser.readNext()) != null) {
 				if (i == 0) {
 					columnsMapper.getColumsNames(profile, strings, columns, handler);
 				} else if (!columns.isEmpty()) {
@@ -398,6 +398,9 @@ public class CsvFeeder implements Feed {
 									classes.toArray(new String[classes.size()][2]), null, null, true, true);
 							break;
 						case "Relative":
+							if ("Intitulé".equals(strings[0]) && "Adresse Organisme".equals(strings[1])) {
+								break csvParserWhile;
+							}
 							JsonArray linkStudents = new JsonArray();
 							for (String attr : user.getFieldNames()) {
 								if ("childExternalId".equals(attr)) {
