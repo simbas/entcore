@@ -686,6 +686,10 @@ public class CsvValidator extends CsvReport implements ImportValidator {
 										classesNames.addString(s);
 									}
 								}
+								if (classesNames.size() == 0) {
+									addSoftErrorByFile(profile, "missing.student.soft", "" + (i+1),
+											user.getString("firstName"), user.getString("lastName"));
+								}
 								break;
 						}
 						String error = validator.validate(user, acceptLanguage, true);
