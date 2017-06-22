@@ -3,7 +3,7 @@ import { I18nResolve } from './routing/i18n.resolve'
 import { StructuresResolve } from './routing/structures.resolve'
 import { StructureResolve } from './routing/structure.resolve'
 import { SessionResolve } from './routing/session.resolve'
-import { Portal, Home, StructureHome } from './components'
+import { Portal, Home, StructureHome, } from './components'
 import { routing } from './routing/routing.utils'
 
 export let routes : Routes = [
@@ -16,7 +16,8 @@ export let routes : Routes = [
 				{ path: ':structureId', resolve: { structure: StructureResolve }, children: [
 					{ path: '', 		component: StructureHome },
 					{ path: 'users', 	loadChildren: './modules/users/users.module#UsersModule' },
-					{ path: 'groups', 	loadChildren: './modules/groups/groups.module#GroupsModule' }
+					{ path: 'groups', 	loadChildren: './modules/groups/groups.module#GroupsModule' },
+					{ path: 'imports-exports', 	loadChildren: './modules/imports-exports/imports-exports.module#ImportsExportsModule' },
 				]}
 			]
 	},

@@ -15,7 +15,7 @@ import { StructureModel } from '../../../../store'
                 <i class="fa fa-arrow-up"></i>
                 <s5l>export.accounts</s5l>
             </button>
-            <button>
+            <button routerLink="imports-exports/import-csv">
                 <i class="fa fa-arrow-down"></i>
                 <s5l>import.users</s5l>
             </button>
