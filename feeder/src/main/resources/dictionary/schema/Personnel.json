@@ -134,6 +134,10 @@
 		"id" : {
 		  "type": "string",
 		  "validator" : "notEmpty"
+		},
+		"importId" : {
+		  "type": "string",
+		  "validator" : "notEmpty"
 		}
 	},
 	"generate" : {
