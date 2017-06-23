@@ -94,6 +94,10 @@
 		"birthDate" : {
 			"type" : "string",
 			"validator" : "birthDate"
+		},
+		"importId" : {
+		  "type": "string",
+		  "validator" : "notEmpty"
 		}
 	},
 	"generate" : {
