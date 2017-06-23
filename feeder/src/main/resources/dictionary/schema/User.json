@@ -98,6 +98,10 @@
 		"loginAlias" : {
 			"type": "login-alias",
 			"validator": "loginAlias"
+		},
+		"importId" : {
+		  "type": "string",
+		  "validator" : "notEmpty"
 		}
 	},
 	"generate" : {
