@@ -1,0 +1,56 @@
+<wizard
+    (cancel)="0"
+    (finish)="0"
+    (nextStep)="nextStep($event)"
+    (previousStep)="previousStep($event)"
+>
+    <step #step1 name="{{ 'import.files.deposit' | translate }}" [isActived]="true" [class.active]="step1.isActived">
+        <h2 class="panel-header">{{ 'import.files.deposit' | translate }}</h2>
+        <form #step1Form="ngForm" (ngSubmit)="createNewUser()">
+            <h3>{{ 'import.files.deposit' | translate }}</h3>
+            <form-field label="Teacher">
+                <input type="checkbox" #teacherCB (change)="0">
+                <input type="file" name="Teacher" (change)="loadFile($event)"
+                        [hidden]="!teacherCB.checked" placeholder="{{ 'import.uplaodTeachers' | translate }}" accept=".csv">                        
+            </form-field>
+            <form-field label="Student">
+                <input type="checkbox" #studentCB (change)="0">
+                <input type="file" name="Student" (change)="loadFile($event)"
+                        [hidden]="!studentCB.checked" placeholder="{{ 'import.uplaodStudents' | translate }}" accept=".csv">
+            </form-field>
+            <form-field label="Relative">
+                <input type="checkbox" #relativeCB (change)="0">
+                <input type="file"  name="Relative" (change)="loadFile($event)"
+                        [hidden]="!relativeCB.checked" placeholder="{{ 'import.uplaodRelatives' | translate }}" accept=".csv">
+            </form-field>
+            <form-field label="Personnel">
+                <input type="checkbox" #personnelCB (change)="0">
+                <input type="file"  name="Personnel" (change)="loadFile($event)"
+                        [hidden]="!personnelCB.checked" placeholder="{{ 'import.uplaodPersonnels' | translate }}" accept=".csv">
+            </form-field>
+            <form-field label="Guest">
+                <input type="checkbox" #guestCB (change)="0">
+                <input type="file" name="Guest" (change)="loadFile($event)"
+                        [hidden]="!guestCB.checked" placeholder="{{ 'import.uplaodGuests' | translate }}" accept=".csv">
+            </form-field>
+
+            <h3>{{ 'import.parameters' | translate }}</h3>
+            <form-field label="import.step1.preDeleteOption">
+                <input type="checkbox"  name="predeleteOption"  [(ngModel)]="importInfos.predelete" >
+            </form-field>
+            <form-field label="import.step1.transitionOption">
+                <input type="checkbox"  name="transitionOption" [(ngModel)]="importInfos.transition" >
+            </form-field>
+        </form>
+    </step>
+    <step #step2 name="{{ 'import.fields.checking' | translate }}" [class.active]="step2.isActived">
+        <h2 class="panel-header">{{ 'import.fields.checking' | translate }}</h2>
+
+    </step>
+    <step #step3 name="{{ 'import.class.checking' | translate }}" [class.active]="step3.isActived">
+        <h2 class="panel-header">{{ 'import.class.checking' | translate }}</h2>
+    </step>
+    <step #step4 name="{{ 'import.report' | translate }}" [class.active]="step4.isActived">
+        <h2 class="panel-header">{{ 'import.report' | translate }}</h2>
+    </step>
+</wizard>
