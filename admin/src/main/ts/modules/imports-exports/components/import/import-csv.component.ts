@@ -10,7 +10,10 @@ import { Wizard } from 'infra-components'
 
 @Component({
     selector: 'import-csv',
-    templateUrl : './import-csv.component.html'
+    templateUrl : './import-csv.component.html',
+    styles : [`
+        .error { color : red; font-weigth: bold; }
+    `]
 })
 
 export class ImportCSV implements OnInit, OnDestroy {
@@ -29,7 +32,6 @@ export class ImportCSV implements OnInit, OnDestroy {
 
     @ViewChild(Wizard) wizardEl: Wizard;
 
-    // Step 1 : Files Deposit
     importInfos = {
         type:'CSV',
         structureId:'',
@@ -37,17 +39,12 @@ export class ImportCSV implements OnInit, OnDestroy {
         structureName:'',
         UAI:'',
         predelete: false,
-        transition:false
-        // Teacher:null,
-        // Student:null,
-        // Relative:null,
-        // Personnel:null,
-        // Guest:null
+        transition:false,
     }
+    stepErrors = [];
 
     ngOnInit(): void {
         this.structureSubscriber = routing.observe(this.route, "data").subscribe((data: Data) => {
-            console.log(data['structure']);
             if(data['structure']) {
                 this.importInfos.structureId = data['structure'].id;
                 this.importInfos.structureExternalId = data['structure'].externalId;
@@ -67,6 +64,12 @@ export class ImportCSV implements OnInit, OnDestroy {
     ngOnDestroy(): void {
     }
 
+    // Clean all the component state
+    cancel () {
+        this.stepErrors = [];
+        this.cdRef.markForCheck();
+    }
+
     nextStep(activeStep: Number) {
         switch(activeStep) {
             case 0 : this.depositCSVFiles(); break;
@@ -79,8 +82,6 @@ export class ImportCSV implements OnInit, OnDestroy {
             case 7 : break;
             default : break;
         }
-
-        this.wizardEl.doNextStep();
     }
 
     previousStep (activeStep: Number) {
@@ -100,6 +101,16 @@ export class ImportCSV implements OnInit, OnDestroy {
     }
 
     depositCSVFiles() {
-        ImportCSVService.uploadCSV(this.importInfos);
+        ImportCSVService.uploadCSV(this.importInfos)
+            .then(data => {
+                console.log(data);
+                if (data.error) {
+                    this.stepErrors[0] = data.error;
+                } else {
+                    this.stepErrors[0] = null;
+                    this.wizardEl.doNextStep();
+                }
+                this.cdRef.markForCheck();
+            });
     }
 }

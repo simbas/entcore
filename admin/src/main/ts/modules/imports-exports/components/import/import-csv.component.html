@@ -1,37 +1,38 @@
 <wizard
-    (cancel)="0"
+    (cancel)="cancel()"
     (finish)="0"
     (nextStep)="nextStep($event)"
     (previousStep)="previousStep($event)"
 >
     <step #step1 name="{{ 'import.files.deposit' | translate }}" [isActived]="true" [class.active]="step1.isActived">
         <h2 class="panel-header">{{ 'import.files.deposit' | translate }}</h2>
+        <p *ngIf="stepErrors[0]" class="error">{{stepErrors[0]}}</p>
         <form #step1Form="ngForm" (ngSubmit)="createNewUser()">
             <h3>{{ 'import.files.deposit' | translate }}</h3>
             <form-field label="Teacher">
                 <input type="checkbox" #teacherCB (change)="0">
                 <input type="file" name="Teacher" (change)="loadFile($event)"
-                        [hidden]="!teacherCB.checked" placeholder="{{ 'import.uplaodTeachers' | translate }}" accept=".csv">                        
+                        [hidden]="!teacherCB.checked" placeholder="{{ 'import.uplaodTeachers' | translate }}">                        
             </form-field>
             <form-field label="Student">
                 <input type="checkbox" #studentCB (change)="0">
                 <input type="file" name="Student" (change)="loadFile($event)"
-                        [hidden]="!studentCB.checked" placeholder="{{ 'import.uplaodStudents' | translate }}" accept=".csv">
+                        [hidden]="!studentCB.checked" placeholder="{{ 'import.uplaodStudents' | translate }}">
             </form-field>
             <form-field label="Relative">
                 <input type="checkbox" #relativeCB (change)="0">
                 <input type="file"  name="Relative" (change)="loadFile($event)"
-                        [hidden]="!relativeCB.checked" placeholder="{{ 'import.uplaodRelatives' | translate }}" accept=".csv">
+                        [hidden]="!relativeCB.checked" placeholder="{{ 'import.uplaodRelatives' | translate }}">
             </form-field>
             <form-field label="Personnel">
                 <input type="checkbox" #personnelCB (change)="0">
                 <input type="file"  name="Personnel" (change)="loadFile($event)"
-                        [hidden]="!personnelCB.checked" placeholder="{{ 'import.uplaodPersonnels' | translate }}" accept=".csv">
+                        [hidden]="!personnelCB.checked" placeholder="{{ 'import.uplaodPersonnels' | translate }}">
             </form-field>
             <form-field label="Guest">
                 <input type="checkbox" #guestCB (change)="0">
                 <input type="file" name="Guest" (change)="loadFile($event)"
-                        [hidden]="!guestCB.checked" placeholder="{{ 'import.uplaodGuests' | translate }}" accept=".csv">
+                        [hidden]="!guestCB.checked" placeholder="{{ 'import.uplaodGuests' | translate }}">
             </form-field>
 
             <h3>{{ 'import.parameters' | translate }}</h3>
@@ -45,7 +46,6 @@
     </step>
     <step #step2 name="{{ 'import.fields.checking' | translate }}" [class.active]="step2.isActived">
         <h2 class="panel-header">{{ 'import.fields.checking' | translate }}</h2>
-
     </step>
     <step #step3 name="{{ 'import.class.checking' | translate }}" [class.active]="step3.isActived">
         <h2 class="panel-header">{{ 'import.class.checking' | translate }}</h2>
