@@ -8,7 +8,8 @@ import { UxModule } from '..'
 import { routes } from './routing/routes'
 import {
     ImportsExportsRoot,
-    ImportCSV
+    ImportCSV,
+    MappingsTable
  } from './components'
 
 @NgModule({
@@ -23,6 +24,7 @@ import {
     declarations: [
         ImportsExportsRoot,
         ImportCSV,
+        MappingsTable
     ],
     providers: [
         // TODO Service to communicate with server API

@@ -46,11 +46,29 @@
     </step>
     <step #step2 name="{{ 'import.fields.checking' | translate }}" [class.active]="step2.isActived">
         <h2 class="panel-header">{{ 'import.fields.checking' | translate }}</h2>
+        <panel-section *ngFor="let profile of columnsMappingProfiles" section-title="{{'import.'+profile+'File'}}" [folded]="true">
+            <mappings-table 
+                [headers]="['import.fieldFromFile','import.fieldToMap']"
+                [mappings]="columnsMapping[profile]"
+                [availables]="columnsAvailables"
+            >
+            </mappings-table>
+        </panel-section>
     </step>
-    <step #step3 name="{{ 'import.class.checking' | translate }}" [class.active]="step3.isActived">
+    <step #step3 name="{{ 'import.classCheckingBetweenFiles' | translate }}" [class.active]="step3.isActived">
         <h2 class="panel-header">{{ 'import.class.checking' | translate }}</h2>
+        <mappings-table 
+            [headers]="['import.classFromFile','import.classToMap']"
+            [mappings]="classesMapping['Teacher']"
+            [availables]="classesMapping['dbClasses']"
+        >
+        </mappings-table>
     </step>
-    <step #step4 name="{{ 'import.report' | translate }}" [class.active]="step4.isActived">
+    <step #step4 name="{{ 'import.classCheckingBetweenFilesAndDB' | translate }}" [class.active]="step4.isActived">
+        <h2 class="panel-header">{{ 'import.class.checking' | translate }}</h2>
+        <p *ngIf="stepErrors[0]" class="error">{{stepErrors[4]}}</p>
+    </step>
+    <step #step5 name="{{ 'import.report' | translate }}" [class.active]="step5.isActived">
         <h2 class="panel-header">{{ 'import.report' | translate }}</h2>
     </step>
 </wizard>
