@@ -650,7 +650,7 @@ public class Importer {
 		String query =
 				"MATCH (u:User)<-[:RELATED]-(s:User)-[:IN]->(scg:ProfileGroup)" +
 				"-[:DEPENDS]->(c:Structure)<-[:DEPENDS]-(rcg:ProfileGroup)-[:HAS_PROFILE]->(p:Profile) " +
-				"WHERE p.externalId = {profileExternalId} AND NOT((u)-[:IN]->(rcg)) " + filter +
+				"WHERE p.externalId = {profileExternalId} " + filter +
 				"MERGE u-[:IN]->rcg";
 		transactionHelper.add(query, j);
 	}
@@ -670,7 +670,7 @@ public class Importer {
 				"MATCH (u:User)<-[:RELATED]-(s:User)-[:IN]->(scg:ProfileGroup)" +
 				"-[:DEPENDS]->(c:Class)<-[:DEPENDS]-(rcg:ProfileGroup)" +
 				"-[:DEPENDS]->(pg:ProfileGroup)-[:HAS_PROFILE]->(p:Profile) " +
-				"WHERE p.externalId = {profileExternalId} AND NOT((u)-[:IN]->(rcg)) " + filter +
+				"WHERE p.externalId = {profileExternalId} " + filter +
 				"MERGE u-[:IN]->rcg";
 		transactionHelper.add(query, j);
 		String query2 =
@@ -690,14 +690,17 @@ public class Importer {
 	}
 
 	public void removeOldFunctionalGroup() {
-		String query =
-				"MATCH (g:FunctionalGroup)<-[:IN]-(:User) " +
-				"WITH COLLECT(distinct g.id) as usedFunctionalGroup " +
-				"MATCH (g:FunctionalGroup) " +
-				"WHERE NOT(g.id IN usedFunctionalGroup) " +
-				"OPTIONAL MATCH g-[r]-() " +
-				"DELETE g, r ";
-		transactionHelper.add(query, null);
+//		String query =
+//				"MATCH (g:FunctionalGroup)<-[:IN]-(:User) " +
+//				"WITH COLLECT(distinct g.id) as usedFunctionalGroup " +
+//				"MATCH (g:FunctionalGroup) " +
+//				"WHERE NOT(g.id IN usedFunctionalGroup) " +
+//				"OPTIONAL MATCH g-[r]-() " +
+//				"DELETE g, r ";
+//		transactionHelper.add(query, null);
+		transactionHelper.add("MATCH (g:FunctionalGroup) set g.notEmptyGroup = false;", null);
+		transactionHelper.add("MATCH (g:FunctionalGroup)<-[:IN]-(:User) set g.notEmptyGroup = true;", null);
+		transactionHelper.add("MATCH (g:FunctionalGroup {notEmptyGroup:false}) detach delete g;", null);
 		// prevent difference between relationships and properties
 		String query2 =
 				"MATCH (u:User) " +
@@ -719,8 +722,8 @@ public class Importer {
 				"WITH COLLECT(distinct c.id) as usedClasses " +
 				"MATCH (c:Class)<-[r1:DEPENDS]-(g:Group) " +
 				"WHERE NOT(c.id IN usedClasses) " +
-				"OPTIONAL MATCH g-[r2]-(), c-[r3]-() " +
-				"DELETE c, g, r1, r2, r3 ";
+			//	"OPTIONAL MATCH g-[r2]-(), c-[r3]-() " +
+				"DETACH DELETE c, g, r1 ";
 		transactionHelper.add(query, null);
 		// prevent difference between relationships and properties
 		String query2 =
