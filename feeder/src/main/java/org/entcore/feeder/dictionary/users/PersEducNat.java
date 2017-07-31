@@ -21,7 +21,6 @@ package org.entcore.feeder.dictionary.users;
 
 import org.entcore.common.neo4j.Neo4jUtils;
 import org.entcore.feeder.timetable.edt.EDTImporter;
-import org.entcore.common.neo4j.Neo4j;
 import org.entcore.feeder.utils.Report;
 import org.entcore.feeder.utils.TransactionHelper;
 import org.entcore.feeder.utils.Validator;
@@ -105,20 +104,15 @@ public class PersEducNat extends AbstractUser {
 					structuresByFunctions = getMappingStructures(structuresByFunctions);
 					JsonObject p = new JsonObject().putString("userExternalId", externalId);
 					if (structuresByFunctions.size() == 1) {
-						query = "MATCH (s:Structure)<-[:DEPENDS]-(g:ProfileGroup)-[:HAS_PROFILE]->(p:Profile), " +
-								"(:User { externalId : {userExternalId}})-[:MERGED*0..1]->(u:User) " +
-								"USING INDEX s:Structure(externalId) " +
-								"USING INDEX p:Profile(externalId) " +
-								"WHERE s.externalId = {structureAdmin} AND NOT(HAS(u.mergedWith)) " +
-								"AND p.externalId = {profileExternalId} " +
+						query = "MATCH (s:Structure {externalId : {structureAdmin}})<-[:DEPENDS]-(g:ProfileGroup)-[:HAS_PROFILE]->(p:Profile {externalId : {profileExternalId}}), " +
+								"(u:User { externalId : {userExternalId}}) " +
+								"WHERE NOT(HAS(u.mergedWith)) " +
 								"MERGE u-[:IN]->g";
 						p.putString("structureAdmin", (String) structuresByFunctions.get(0))
 								.putString("profileExternalId", profileExternalId);
 					} else {
 						query = "MATCH (s:Structure)<-[:DEPENDS]-(g:ProfileGroup)-[:HAS_PROFILE]->(p:Profile), " +
-								"(:User { externalId : {userExternalId}})-[:MERGED*0..1]->(u:User) " +
-								"USING INDEX s:Structure(externalId) " +
-								"USING INDEX p:Profile(externalId) " +
+								"(u:User { externalId : {userExternalId}}) " +
 								"WHERE s.externalId IN {structuresAdmin} AND NOT(HAS(u.mergedWith)) " +
 								"AND p.externalId = {profileExternalId} " +
 								"MERGE u-[:IN]->g ";
@@ -143,14 +137,12 @@ public class PersEducNat extends AbstractUser {
 					for (String[] structClass : linkClasses) {
 						if (structClass != null && structClass[0] != null && structClass[1] != null) {
 							String query =
-									"MATCH (s:Structure)<-[:BELONGS]-(c:Class)<-[:DEPENDS]-(g:ProfileGroup)" +
-											"-[:DEPENDS]->(pg:ProfileGroup)-[:HAS_PROFILE]->(p:Profile), " +
-											"(:User { externalId : {userExternalId}})-[:MERGED*0..1]->(u:User) " +
-											"USING INDEX s:Structure(externalId) " +
-											"USING INDEX p:Profile(externalId) " +
-											"WHERE s.externalId = {structure} AND c.externalId = {class} " +
-											"AND NOT(HAS(u.mergedWith)) AND p.externalId = {profileExternalId} " +
-											"MERGE u-[:IN]->g";
+									"MATCH (s:Structure {externalId : {structure}})<-[:BELONGS]-(c:Class {externalId : {class}})" +
+									"<-[:DEPENDS]-(g:ProfileGroup)" +
+									"-[:DEPENDS]->(pg:ProfileGroup)-[:HAS_PROFILE]->(p:Profile {externalId : {profileExternalId}}), " +
+									"(u:User { externalId : {userExternalId}}) " +
+									"WHERE NOT(HAS(u.mergedWith)) " +
+									"MERGE u-[:IN]->g";
 							JsonObject p = new JsonObject()
 									.putString("userExternalId", externalId)
 									.putString("profileExternalId", profileExternalId)
@@ -192,13 +184,10 @@ public class PersEducNat extends AbstractUser {
 					for (String[] structGroup : linkGroups) {
 						if (structGroup != null && structGroup[0] != null && structGroup[1] != null) {
 							String query =
-									"MATCH (s:Structure)" +
-											"<-[:DEPENDS]-(g:FunctionalGroup), " +
-											"(u:User) " +
-											"USING INDEX s:Structure(externalId) " +
-											"USING INDEX u:User(externalId) " +
-											"WHERE s.externalId = {structure} AND g.externalId = {group} AND u.externalId = {userExternalId} " +
-											"MERGE u-[:IN]->g";
+									"MATCH (s:Structure {externalId : {structure}})" +
+									"<-[:DEPENDS]-(g:FunctionalGroup {externalId : {group}}), " +
+									"(u:User {externalId : {userExternalId}}) " +
+									"MERGE u-[:IN]->g";
 							JsonObject p = new JsonObject()
 									.putString("userExternalId", externalId)
 									.putString("structure", structGroup[0])
