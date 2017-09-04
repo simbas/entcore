@@ -771,20 +771,24 @@ public class CsvValidator extends CsvReport implements ImportValidator {
 								}
 								break;
 						}
-						String error = validator.validate(user, acceptLanguage, true);
+						JsonArray errorsContext = new JsonArray(); // Must follow that shape : [{"reason":"error.key", "attribute":"lastName", "value":""}...]
+						String error = validator.validate(user, acceptLanguage, true, errorsContext);
 						if (error != null) {
 							log.warn(error);
-							addError(profile, error);
-						} else {
-							final String classesStr = Joiner.on(", ").join(classesNames);
-							classesNamesMapping.put(user.getString("externalId"), classesStr);
-							addUser(profile, user.putString("state", translate(state.name()))
-									.putString("translatedProfile", translate(profile))
-									.putString("classesStr", classesStr)
-									.putArray("childExternalId", linkStudents)
-									.putNumber("line", i + 1)
-							);
+							for (Object ec : errorsContext) {
+								JsonObject err = (JsonObject)ec;
+								addSoftErrorByFile(profile,
+										err.getString("reason"), "" + (i + 1), err.getString("attribute"), err.getString("value"));
+							}
 						}
+						final String classesStr = Joiner.on(", ").join(classesNames);
+						classesNamesMapping.put(user.getString("externalId"), classesStr);
+						addUser(profile, user.putString("state", translate(state.name()))
+										.putString("translatedProfile", translate(profile))
+										.putString("classesStr", classesStr)
+										.putArray("childExternalId", linkStudents)
+										.putNumber("line", i + 1)
+						);
 						i++;
 					}
 				} catch (Exception e) {
