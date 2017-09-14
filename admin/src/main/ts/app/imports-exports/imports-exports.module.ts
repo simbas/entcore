@@ -13,6 +13,7 @@ import { ExportComponent } from './export/export.component'
 import { MassMailComponent } from './export/mass-mail.component'
 import { UserlistFiltersService } from '../core/services'
 import { FiltersPipe } from './export/mass-mail.pipe'
+import { EllipsisComponent } from './import/ellipsis.component'
 
 @NgModule({
     imports: [
@@ -30,7 +31,8 @@ import { FiltersPipe } from './export/mass-mail.pipe'
         MappingsTable,
         ExportComponent,
         MassMailComponent,
-        FiltersPipe
+        FiltersPipe,
+        EllipsisComponent
     ],
     providers: [
         UserlistFiltersService,
