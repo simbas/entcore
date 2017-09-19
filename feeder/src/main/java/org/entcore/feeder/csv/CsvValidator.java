@@ -681,7 +681,6 @@ public class CsvValidator extends CsvReport implements ImportValidator {
 						}
 						switch (profile) {
 							case "Relative":
-								JsonArray linkStudents = new JsonArray();
 								if ("Intitulé".equals(strings[0]) && "Adresse Organisme".equals(strings[1])) {
 									break csvParserWhile;
 								}
@@ -832,16 +831,6 @@ public class CsvValidator extends CsvReport implements ImportValidator {
 
 	public ProfileColumnsMapper getColumnsMapper() {
 		return columnsMapper;
-	}
-
-	private void relativeStudentMapping(JsonArray linkStudents, String mapping) {
-		if (mapping.trim().isEmpty()) return;
-		try {
-			String hash = Hash.sha1(mapping.getBytes("UTF-8"));
-			linkStudents.add(getOrElse(studentExternalIdMapping.get(hash), hash));
-		} catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
-			log.error(e.getMessage(), e);
-		}
 	}
 
 }
