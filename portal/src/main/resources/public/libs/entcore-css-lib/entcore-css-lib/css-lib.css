@@ -4272,12 +4272,7 @@ slider, slider.drawing-zone {
 
 .media-library image-compression {
   display: block;
-<<<<<<< HEAD
-  position: relative;
-  float: left; }
-=======
   position: relative; }
->>>>>>> 61e49893e... [build] drop bower
   .media-library image-compression canvas {
     max-width: 100%; }
 
@@ -8396,14 +8391,3 @@ html.app {
     font-size: 10px; }
   article.preview {
     max-height: 800px; } }
-<<<<<<< HEAD
-
-i.cloud-upload {
-  font-family: "generic-icons";
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-image: none; }
-  i.cloud-upload::before {
-    content: '\e9c3'; }
-=======
->>>>>>> 61e49893e... [build] drop bower
