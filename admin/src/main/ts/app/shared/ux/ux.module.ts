@@ -4,8 +4,9 @@ import { FormsModule } from '@angular/forms'
 import { CommonModule } from '@angular/common'
 import { NgModule } from '@angular/core'
 
-import { FormErrors, FormField, ListComponent, PanelSection, SideLayout, SpinnerComponent, Datepicker } from './components'
-import { AnchorDirective } from './directives'
+
+import { FormErrors, FormField, ListComponent, PanelSection, SideLayout, SpinnerComponent, Datepicker, SimpleSelect } from './components'
+import { AnchorDirective, DynamicComponent} from './directives'
 import { MapToArrayPipe } from './pipes'
 
 @NgModule({
@@ -24,8 +25,9 @@ import { MapToArrayPipe } from './pipes'
         FormErrors,
         AnchorDirective,
         Datepicker,
-        MapToArrayPipe
-
+        MapToArrayPipe,
+        DynamicComponent,
+        SimpleSelect
     ],
     exports: [
         SpinnerComponent,
@@ -36,7 +38,10 @@ import { MapToArrayPipe } from './pipes'
         FormErrors,
         AnchorDirective,
         Datepicker,
-        MapToArrayPipe
-    ]
+        MapToArrayPipe,
+        DynamicComponent,
+        SimpleSelect
+    ],
+    entryComponents: [SimpleSelect]
 })
 export class UxModule{}
