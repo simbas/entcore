@@ -27,7 +27,7 @@ type EllipsisBehavior = "expand" | "hide";
         '(click)': 'onClick()',
     }
 })
-export class EllipsisComponent {
+export class Ellipsis {
     constructor(private eltRef: ElementRef ){}
 
     private _ellipsis: EllipsisBehavior  = "hide"

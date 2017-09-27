@@ -4,8 +4,11 @@ import { FormsModule } from '@angular/forms'
 import { CommonModule } from '@angular/common'
 import { NgModule } from '@angular/core'
 
-
-import { FormErrors, FormField, ListComponent, PanelSection, SideLayout, SpinnerComponent, Datepicker, SimpleSelect } from './components'
+import { 
+    FormErrors, FormField, 
+    ListComponent, PanelSection, SideLayout, SpinnerComponent, Datepicker, 
+    SimpleSelect, 
+    Ellipsis } from './components'
 import { AnchorDirective, DynamicComponent} from './directives'
 import { MapToArrayPipe } from './pipes'
 
@@ -27,7 +30,8 @@ import { MapToArrayPipe } from './pipes'
         Datepicker,
         MapToArrayPipe,
         DynamicComponent,
-        SimpleSelect
+        SimpleSelect,
+        Ellipsis
     ],
     exports: [
         SpinnerComponent,
@@ -40,7 +44,8 @@ import { MapToArrayPipe } from './pipes'
         Datepicker,
         MapToArrayPipe,
         DynamicComponent,
-        SimpleSelect
+        SimpleSelect,
+        Ellipsis
     ],
     entryComponents: [SimpleSelect]
 })
