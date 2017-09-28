@@ -214,5 +214,11 @@
     "notify.structure.syncusers.error.title": "Erreur lors de la récupération des utilisateurs.",
     "notify.structure.syncusers.error.content": "Les utilisateurs de la structure {{structure}} n'ont pas pu être récupérés.",
     "datepicker.open": "Ouvrir le calendrier",
-    "datepicker.delete": "Supprimer la date"
+    "datepicker.delete": "Supprimer la date",
+    "services": "Services",
+    "search.application": "Rechercher une application",
+    "list.results.no.applications":" Aucune application",
+    "list.no.role": "Il n'existe aucun rôle configuré pour cette application",
+    "application.give.rights": "Attribuer les droits de ",
+    "add.groups": "Ajouter des groupes"
 }
