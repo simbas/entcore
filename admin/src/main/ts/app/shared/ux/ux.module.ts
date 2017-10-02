@@ -8,7 +8,8 @@ import {
     FormErrors, FormField, 
     ListComponent, PanelSection, SideLayout, SpinnerComponent, Datepicker, 
     SimpleSelect, 
-    Ellipsis } from './components'
+    Ellipsis,
+    Pager, LengthPipe } from './components'
 import { AnchorDirective, DynamicComponent} from './directives'
 import { MapToArrayPipe } from './pipes'
 
@@ -31,7 +32,9 @@ import { MapToArrayPipe } from './pipes'
         MapToArrayPipe,
         DynamicComponent,
         SimpleSelect,
-        Ellipsis
+        Ellipsis,
+        Pager,
+        LengthPipe
     ],
     exports: [
         SpinnerComponent,
@@ -45,7 +48,9 @@ import { MapToArrayPipe } from './pipes'
         MapToArrayPipe,
         DynamicComponent,
         SimpleSelect,
-        Ellipsis
+        Ellipsis,
+        Pager,
+        LengthPipe
     ],
     entryComponents: [SimpleSelect]
 })
