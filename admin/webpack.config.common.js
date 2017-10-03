@@ -22,13 +22,6 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.scss$/,
-                use: ExtractTextPlugin.extract({
-                    use: ['css-loader', 'sass-loader'],
-                    allChunks: true
-                })
-            },
-            {
                 test: /\.woff$/,
                 use: 'file-loader?emitFile=false&name=[name].[ext]&publicPath=./'
             }
@@ -39,11 +32,6 @@ module.exports = {
         new HtmlWebpackPlugin({
             filename: '../view/admin.html',
             template: path_prefix + '/resources/view-src/admin.ejs'
-        }),
-        new ExtractTextPlugin({
-            filename:  (getPath) => {
-                return getPath('css/admin.[hash].css');
-            }
         })
     ]
 }

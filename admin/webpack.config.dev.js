@@ -1,6 +1,7 @@
 const webpack = require('webpack')
 const webpackMerge = require('webpack-merge')
 
+const ExtractTextPlugin = require('extract-text-webpack-plugin')
 const commonConfig = require('./webpack.config.common.js')
 const path_prefix = './admin/src/main'
 
@@ -14,6 +15,13 @@ module.exports = webpackMerge(commonConfig, {
 
     module: {
         rules: [
+            {
+                test: /\.scss$/,
+                use: ExtractTextPlugin.extract({
+                    use: ['css-loader', 'sass-loader'],
+                    allChunks: true
+                })
+            },
             {
                 test: /\.ts$/,
                 use: [
@@ -32,7 +40,8 @@ module.exports = webpackMerge(commonConfig, {
     plugins: [
         new webpack.optimize.CommonsChunkPlugin({
             name: ['admin', 'vendor', 'polyfills']
-        })
+        }),
+        new ExtractTextPlugin('css/admin.css')
     ],
 
     devServer: require('./webpack.config.devserver.js')
