@@ -9,7 +9,8 @@ import {
     ListComponent, PanelSection, SideLayout, SpinnerComponent, Datepicker, 
     SimpleSelect, 
     Ellipsis,
-    Pager, LengthPipe } from './components'
+    Pager, LengthPipe,
+    MessageSticker, MessageBox } from './components'
 import { AnchorDirective, DynamicComponent} from './directives'
 import { MapToArrayPipe } from './pipes'
 
@@ -34,7 +35,8 @@ import { MapToArrayPipe } from './pipes'
         SimpleSelect,
         Ellipsis,
         Pager,
-        LengthPipe
+        LengthPipe,
+        MessageSticker, MessageBox
     ],
     exports: [
         SpinnerComponent,
@@ -50,8 +52,12 @@ import { MapToArrayPipe } from './pipes'
         SimpleSelect,
         Ellipsis,
         Pager,
-        LengthPipe
+        LengthPipe,
+        MessageSticker, MessageBox
     ],
-    entryComponents: [SimpleSelect]
+    entryComponents: [
+        SimpleSelect,
+        MessageBox
+    ]
 })
 export class UxModule{}
