@@ -25,7 +25,7 @@ import { SpinnerService, NotifyService, PlateformeInfoService } from '../../../.
         </form-field>
         <form-field label="administration" *ngIf="!user.deleteDate">
             <button class= "noflex"
-                *ngIf="!details.functions || !details.functions[0] || !details.functions[0][0]" 
+                *ngIf="!details.isAdml(this.structure.id)" 
                 (click)="addAdml()">
                 <s5l>adml.add</s5l>
                 <i class="fa fa-cog"></i>
@@ -38,7 +38,7 @@ import { SpinnerService, NotifyService, PlateformeInfoService } from '../../../.
                 <span *ngIf="function[1] && function[1].length > 0 && !getStructure(function[1][0])">
                     ({{ 'member.of.n.structures' | translate:{ count: function[1].length } }})
                 </span>
-                <button *ngIf="details.isAdml()" 
+                <button *ngIf="details.isAdml(this.structure.id)" 
                     (click)="removeAdml()">
                     <s5l>adml.remove</s5l>
                     <i class="fa fa-cog"></i>

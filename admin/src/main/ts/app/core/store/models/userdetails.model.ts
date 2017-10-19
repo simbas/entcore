@@ -98,10 +98,11 @@ export class UserDetailsModel extends Model<UserDetailsModel> {
         })
     }
 
-    isAdml() {
+    isAdml(structureId?: string) {
         return this.functions && this.functions.length > 0 
             && this.functions[0] && this.functions[0].length > 0 
             && this.functions[0][0] === 'ADMIN_LOCAL'
+            && this.functions[0][1].includes(structureId)
     }
 
     toJSON() {
