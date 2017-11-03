@@ -27,6 +27,7 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -49,8 +50,9 @@ public class PersonnelImportProcessing extends BaseImportProcessing {
 	@Override
 	public void process(JsonObject object) {
 		List<String> c = object.getArray("classes") != null ? object.getArray("classes").toList() : new LinkedList<String>();
-		createGroups(object.getArray("groups"), c);
+		createGroups(object.getArray("groups"), c, null);
 		createClasses(new JsonArray(c));
+		createFunctionGroups(object.getArray("functions"), null);
 		linkMef(object.getArray("modules"));
 		String profile = detectProfile(object);
 		object.putArray("profiles", new JsonArray()
@@ -91,15 +93,8 @@ public class PersonnelImportProcessing extends BaseImportProcessing {
 		}
 	}
 
-	protected String[][] createGroups(JsonArray groups) {
-		return createGroups(groups, null);
-	}
-
-	protected String[][] createGroups(JsonArray groups, List<String> classes) {
-		String [][] linkStructureGroups = null;
+	protected void createGroups(JsonArray groups, List<String> classes, List<String[]> linkStructureGroups) {
 		if (groups != null && groups.size() > 0) {
-			linkStructureGroups = new String[groups.size()][3];
-			int i = 0;
 			for (Object o : groups) {
 				if (!(o instanceof String)) continue;
 				String [] g = ((String) o).split("\\$");
@@ -108,9 +103,13 @@ public class PersonnelImportProcessing extends BaseImportProcessing {
 					if (s != null) {
 						String groupExternalId = s.getExternalId() + "$" + g[1];
 						s.createFunctionalGroupIfAbsent(groupExternalId, g[1]);
-						linkStructureGroups[i][0] = s.getExternalId();
-						linkStructureGroups[i][1] = groupExternalId;
-						linkStructureGroups[i++][2] = (g.length == 3) ? g[2] : "";
+						if (linkStructureGroups != null) {
+							final String[] group = new String[3];
+							group[0] = s.getExternalId();
+							group[1] = groupExternalId;
+							group[2] = (g.length == 3) ? g[2] : "";
+							linkStructureGroups.add(group);
+						}
 						if (classes != null) {
 							final List<String> lc = importer.getGroupClasses().get(groupExternalId);
 							if (lc != null) {
@@ -121,7 +120,6 @@ public class PersonnelImportProcessing extends BaseImportProcessing {
 				}
 			}
 		}
-		return linkStructureGroups;
 	}
 
 	protected String[][] createClasses(JsonArray classes) {
@@ -145,6 +143,36 @@ public class PersonnelImportProcessing extends BaseImportProcessing {
 			}
 		}
 		return linkStructureClasses;
+	}
+
+	protected void createFunctionGroups(JsonArray functions, List<String[]> linkStructureGroups) {
+		if (functions != null && functions.size() > 0) {
+			for (Object o : functions) {
+				if (!(o instanceof String)) continue;
+				String [] g = ((String) o).split("\\$");
+				if (g.length == 5) {
+					Structure s = importer.getStructure(g[0]);
+					String groupExternalId;
+					if (s != null) {
+						if ("ENS".equals(g[1])) {
+							groupExternalId = s.getExternalId() + "$" + g[3];
+							s.createFunctionGroupIfAbsent(groupExternalId, g[4]);
+						} else if (!"-".equals(g[1])) {
+							groupExternalId = s.getExternalId() + "$" + g[1];
+							s.createFunctionGroupIfAbsent(groupExternalId, g[2]);
+						} else {
+							continue;
+						}
+						if (linkStructureGroups != null) {
+							final String[] group = new String[3];
+							group[0] = s.getExternalId();
+							group[1] = groupExternalId;
+							linkStructureGroups.add(group);
+						}
+					}
+				}
+			}
+		}
 	}
 
 	@Override
