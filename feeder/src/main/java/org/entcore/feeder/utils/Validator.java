@@ -132,7 +132,9 @@ public class Validator {
 						err = i18n.translate("missing.type.validator", I18n.DEFAULT_DOMAIN, acceptLanguage, type);
 				}
 				if (err != null) {
-					log.info(err);
+					if (!"ignore".equals(err)) {
+						log.info(err);
+					}
 					object.removeField(attr);
 					continue;
 				}
@@ -193,6 +195,9 @@ public class Validator {
 						err = "Missing type validator: " + type;
 				}
 				if (err != null) {
+					if ("ignore".equals(err)) {
+						return i18n.translate("empty.attribute", I18n.DEFAULT_DOMAIN, "fr", attr);
+					}
 					return err;
 				}
 				if (value != null && generate.containsField(attr)) {
@@ -379,7 +384,7 @@ public class Validator {
 		switch (validator) {
 			case "notEmpty" :
 				if (!(((JsonArray) value).size() > 0)) {
-					err = i18n.translate("empty.attribute", I18n.DEFAULT_DOMAIN, acceptLanguage, attr);
+					err = "ignore";
 				}
 				break;
 			case "nop":
@@ -399,8 +404,7 @@ public class Validator {
 		if (p == null) {
 			return i18n.translate("missing.validator", I18n.DEFAULT_DOMAIN, acceptLanguage, validator);
 		}
-		// hack #16883
-		if ("mobile".equals(validator) && value instanceof String && ((String) value).isEmpty()) {
+		if (!"notEmpty".equals(validator) && value instanceof String && ((String) value).isEmpty()) {
 			return null;
 		}
 		if (value instanceof String && p.matcher((String) value).matches()) {
@@ -410,7 +414,11 @@ public class Validator {
 			}
 			return null;
 		} else {
-			return i18n.translate("invalid.value", I18n.DEFAULT_DOMAIN, acceptLanguage, attr, (value != null ? value.toString() : "null"));
+			if ("notEmpty".equals(validator)) {
+				return "ignore";
+			} else {
+				return i18n.translate("invalid.value", I18n.DEFAULT_DOMAIN, acceptLanguage, attr, (value != null ? value.toString() : "null"));
+			}
 		}
 	}
 
