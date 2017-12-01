@@ -1,29 +1,45 @@
-apply from: "gradle/setup.gradle"
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
-subprojects {
-  apply plugin: 'eclipse'
-  apply plugin: 'java'
+plugins {
+  id 'java'
+  id 'com.github.johnrengelman.shadow' version '2.0.1'
+}
 
-  apply from: "$rootDir/gradle/vertx.gradle"
+subprojects {
+  apply plugin:'java'
+  apply plugin:'maven'
+  apply plugin:'maven-publish'
+  apply plugin:'com.github.johnrengelman.shadow'
 
 	repositories {
-		maven {
-			credentials {
-				username 'admin'
-				password 'admin'
-			}
-			url "http://maven.web-education.net/nexus/content/groups/public"
-		}
+  mavenLocal()
+  maven {
+    url "http://maven.web-education.net/nexus/content/repositories/releases/"
+  }
+  mavenCentral()
+  jcenter()
+  maven {
+    url "https://oss.sonatype.org/content/repositories/iovertx-3720/"
+  }
+  maven { url "https://plugins.gradle.org/m2/" }
 	}
+
+  configurations {
+    provided
+    runtime.exclude module: 'vertx-core'
+  }
+
+  sourceSets {
+    main { compileClasspath += configurations.provided }
+  }
 
   configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
   }
 
-  sourceCompatibility = 1.7
-  targetCompatibility = 1.7
+  sourceCompatibility = 1.8
+  targetCompatibility = 1.8
 
   compileJava {
     sourceCompatibility = project.sourceCompatibility
@@ -34,15 +50,64 @@ subprojects {
     sourceCompatibility = project.sourceCompatibility
     targetCompatibility = project.targetCompatibility
   }
-
   dependencies {
-    provided "io.vertx:vertx-core:$vertxVersion"
-    provided "io.vertx:vertx-platform:$vertxVersion"
-
+    compileOnly "io.vertx:vertx-core:$vertxVersion"
     testCompile "junit:junit:$junitVersion"
-    testCompile "io.vertx:testtools:$toolsVersion"
   }
 
+  jar {
+    manifest {
+      attributes(
+          "Main-Verticle": "service:mod"
+      )
+    }
+  }
+
+  shadowJar {
+    classifier = 'fat'
+    archiveName = "${modowner}~${project.name}~$version-$classifier.$extension"
+      mergeServiceFiles {
+        include 'META-INF/services/io.vertx.core.spi.VerticleFactory'
+      }
+  }
+
+  install {
+    repositories.mavenInstaller {
+      pom.version = "$version"
+        pom.artifactId = "${project.name}"
+        pom.groupId = "${modowner}"
+    }
+  }
+
+  publishing {
+    repositories {
+      if (version.endsWith("SNAPSHOT")) {
+        maven {
+          name 'Snapshots'
+            url 'https://maven.opendigitaleducation.com/nexus/content/repositories/snapshots/'
+            credentials {
+              username "${odeUsername}"
+                password "${odePassword}"
+            }
+        }
+      } else {
+        maven {
+          name 'Releases'
+            url 'https://maven.opendigitaleducation.com/nexus/content/repositories/releases/'
+            credentials {
+              username "${odeUsername}"
+                password "${odePassword}"
+            }
+        }
+      }
+    }
+    publications {
+      maven(MavenPublication) {
+        groupId "${modowner}"
+          artifact("build/libs/${modowner}~${project.name}~$version-fat.jar") { classifier "fat" }
+      }
+    }
+  }
   javadoc {
     options.encoding = 'UTF-8'
     classpath = configurations.provided
@@ -50,18 +115,19 @@ subprojects {
   }
 
 	afterEvaluate { project ->
-		project.tasks['copyMod'].doLast {
+		project.tasks['shadowJar'].doLast {
 			copy {
 				into 'mods'
-				from "${project.name}/build/mods"
+				from "${project.name}/build/libs/$archiveName"
 			}
 		}
 		project.tasks['clean'].doLast {
-			rootProject.delete "mods/${project.ext.moduleName}"
+			rootProject.delete "mods"
 		}
 	}
 }
 
+/*
 def generateMissingI18n() {
   JsonSlurper jsonSlurper = new JsonSlurper()
   File rootDir = new File(".")
@@ -82,10 +148,10 @@ def generateMissingI18n() {
     }
   }
 }
-
 task generateI18n(description:'Generate missing keys in i18n files') << {
   generateMissingI18n()
 }
+*/
 
 project(':common') {
   dependencies {
@@ -120,6 +186,7 @@ project(':auth') {
     compile "jp.eisbahn:oauth2-server:1.2.0"
     compile "org.opensaml:opensaml:2.6.4"
     compile "org.slf4j:slf4j-api:1.7.12"
+    compile "joda-time:joda-time:$jodaTimeVersion"
   }
 }
 
@@ -136,6 +203,7 @@ project(':directory') {
     compile project(':common')
     compile "fr.wseduc:web-utils:$webUtilsVersion"
     compile "fr.wseduc:mongodb-helper:$mongodbHelperVersion"
+    compile "joda-time:joda-time:$jodaTimeVersion"
   }
 }
 
@@ -180,6 +248,7 @@ project(':feeder') {
     compile "com.opencsv:opencsv:$opencsvVersion"
     compile "com.googlecode.juniversalchardet:juniversalchardet:$juniversalchardetVersion"
     compile "org.apache.commons:commons-lang3:$commonsLangVersion"
+    compile "joda-time:joda-time:$jodaTimeVersion"
   }
 }
 
@@ -211,6 +280,7 @@ project(':session') {
   }
 }
 
+/*
 project(':tests') {
   apply plugin: 'scala'
 
@@ -299,3 +369,42 @@ gradle.taskGraph.afterTask { task, TaskState state ->
         tasks.stopEnt.execute()
     }
 }
+*/
+
+
+def configurePom(def pom) {
+  pom.project {
+    name 'web-utils'
+    description 'Vert.x web utils framework'
+    inceptionYear '2013'
+    packaging 'jar'
+    url 'https://github.com/web-education/web-utils'
+
+    developers {
+      developer {
+        id 'dboissin'
+        name 'Damien BOISSIN'
+        email 'damien.boissin@web-education.net'
+      }
+    }
+
+    scm {
+      connection 'scm:git:ssh://git@github.com:web-education/web-utils.git'
+      developerConnection 'scm:git:ssh://git@github.com:web-education/web-utils.git'
+      url 'https://github.com/web-education/web-utils.git'
+    }
+
+    licenses {
+      license {
+        name 'The Apache Software License, Version 2.0'
+        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+        distribution 'repo'
+      }
+    }
+
+    properties {
+      setProperty('project.build.sourceEncoding', 'UTF8')
+    }
+  }
+}
+
