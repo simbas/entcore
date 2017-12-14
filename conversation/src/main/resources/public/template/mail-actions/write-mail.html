@@ -12,11 +12,7 @@
 			</div>
 			<div class="row">
 				<label class="two cell twelve-mobile"><i18n>to</i18n></label>
-				<search-user class="ten cell twelve-mobile" 
-					ng-model="users.search" 
-					clear-list="users.found.splice(0, users.found.length)" 
-					on-send="updateFoundUsers()" id="to-users">
-				</search-user>
+				<input type="text" class="ten cell twelve-mobile" ng-model="users.search" autofocus ng-change="updateFoundUsers()" id="to-users" />
 				
 				<drop-down
 						options="users.found"
@@ -36,11 +32,7 @@
 			</div>
 			<div class="row">
 				<label class="two cell twelve-mobile"><i18n>copy</i18n></label>
-				<search-user class="ten cell twelve-mobile" 
-					ng-model="users.searchCC" 
-					clear-list="users.found.splice(0, users.found.length)" 
-					on-send="updateFoundCCUsers()" id="cc-users">
-				</search-user>
+				<input type="text" class="ten cell twelve-mobile" ng-model="users.searchCC" ng-change="updateFoundCCUsers()" id="cc-users" />
 				<drop-down
 						options="users.foundCC"
 						ng-change="addCCUser()"
