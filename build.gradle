@@ -280,24 +280,25 @@ project(':session') {
   }
 }
 
-/*
+
 project(':tests') {
   apply plugin: 'scala'
 
   dependencies {
-    compile 'io.gatling.highcharts:gatling-charts-highcharts:2.0.3'
+    compile 'io.gatling.highcharts:gatling-charts-highcharts:2.2.2'
     compile 'net.minidev:json-smart:1.1.1'
   }
 
   task gatling(dependsOn: 'compileTestScala') << {
-    def simulations =  new java.io.File(sourceSets.test.output.classesDir.getPath() + File.separator + 'org' + File.separator + 'entcore' + File.separator + 'test' + File.separator + 'simulations')
+    def classesDir = sourceSets.test.output.classesDir.getPath().replace("java", "scala")
+    def simulations =  new java.io.File(classesDir + File.separator + 'org' + File.separator + 'entcore' + File.separator + 'test' + File.separator + 'simulations')
 
     logger.lifecycle(" ---- Executing all Gatling scenarios from: ${simulations} ----")
     simulations.eachFileRecurse { file ->
       if (file.isFile()) {
         //Remove the full path, .class and replace / with a .
         logger.debug("Tranformed file ${file} into")
-          def gatlingScenarioClass = (file.getPath() - (sourceSets.test.output.classesDir.getPath() + File.separator) - '.class')
+          def gatlingScenarioClass = (file.getPath() - (classesDir + File.separator) - '.class')
           .replace(File.separator, '.')
 
           logger.debug("Tranformed file ${file} into scenario class ${gatlingScenarioClass}")
@@ -306,9 +307,7 @@ project(':tests') {
             main = 'io.gatling.app.Gatling'
               classpath = sourceSets.test.output + sourceSets.test.runtimeClasspath
             args  '-bf',
-            sourceSets.test.output.classesDir,
-            '-rbf',
-            sourceSets.test.output.classesDir,
+            classesDir,
             '-s',
             gatlingScenarioClass,
             '-rf',
@@ -322,6 +321,7 @@ project(':tests') {
 
 }
 
+/*
 task runEnt(type:Exec, dependsOn: subprojects.copyMod) {
   workingDir '.'
 
