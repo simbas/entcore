@@ -102,12 +102,22 @@ subprojects {
       }
     }
     publications {
-      maven(MavenPublication) {
-        groupId "${modowner}"
-          artifact("build/libs/${modowner}~${project.name}~$version-fat.jar") { classifier "fat" }
+      if (!"common".equals(project.name) && !"tests".equals(project.name)) {
+        maven(MavenPublication) {
+          groupId "${modowner}"
+            artifact("build/libs/${modowner}~${project.name}~$version-fat.jar") { classifier "fat" }
+        }
+      }
+      if ("common".equals(project.name) || "tests".equals(project.name)) {
+        maven(MavenPublication) {
+          groupId "${modowner}"
+          artifactId "${project.name}"
+          artifact("build/libs/${project.name}-${version}.jar")
+        }
       }
     }
   }
+
   javadoc {
     options.encoding = 'UTF-8'
     classpath = configurations.provided
