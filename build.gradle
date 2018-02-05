@@ -22,7 +22,7 @@ subprojects {
 	repositories {
   mavenLocal()
   maven {
-    url "http://maven.web-education.net/nexus/content/repositories/releases/"
+    url "https://maven.opendigitaleducation.com/nexus/content/groups/public"
   }
   mavenCentral()
   jcenter()
