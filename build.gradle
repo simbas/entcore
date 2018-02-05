@@ -6,6 +6,13 @@ plugins {
   id 'com.github.johnrengelman.shadow' version '2.0.1'
 }
 
+if (!hasProperty('odeUsername')) {
+  ext.odeUsername = ''
+}
+if (!hasProperty('odePassword')) {
+  ext.odePassword = ''
+}
+
 subprojects {
   apply plugin:'java'
   apply plugin:'maven'
