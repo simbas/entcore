@@ -23,6 +23,13 @@ if [ $? -eq 0 ]
 then
   if [ "$2" == "publish" ]
   then
+    if [ ! -e ~/.gradle/gradle.properties ]
+    then
+      echo "odeUsername=$NEXUS_ODE_USERNAME" > ~/.gradle/gradle.properties
+      echo "odePassword=$NEXUS_ODE_PASSWORD" >> ~/.gradle/gradle.properties
+      echo "sonatypeUsername=$NEXUS_SONATYPE_USERNAME" >> ~/.gradle/gradle.properties
+      echo "sonatypePassword=$NEXUS_SONATYPE_PASSWORD" >> ~/.gradle/gradle.properties
+    fi
     docker-compose run --rm -u "$USER_UID:$GROUP_GID" gradle gradle publish
   fi
 fi
