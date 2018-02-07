@@ -76,7 +76,8 @@ public class Directory extends BaseServer {
 		directoryController.setUserService(userService);
 		directoryController.setGroupService(groupService);
 		addController(directoryController);
-		directoryController.createSuperAdmin();
+		vertx.setTimer(5000l, event -> directoryController.createSuperAdmin());
+
 
 		UserBookController userBookController = new UserBookController();
 		userBookController.setSchoolService(schoolService);
