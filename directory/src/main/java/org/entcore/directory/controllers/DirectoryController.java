@@ -442,6 +442,7 @@ public class DirectoryController extends BaseController {
 	}
 
 	public void createSuperAdmin(){
+		log.info("Create super admin");
 		neo.send("MATCH (n:User)-[:HAS_FUNCTION]->(f:Function { externalId : 'SUPER_ADMIN'}) "
 			+ "WHERE n.id = '" + admin.getString("id") + "' "
 			+ "WITH count(*) AS exists "
@@ -449,13 +450,21 @@ public class DirectoryController extends BaseController {
 			+ "CREATE (m:User {id:'" + admin.getString("id") + "', "
 			+ "externalId:'" + UUID.randomUUID().toString() + "', "
 			+ "manual:true, "
-			+ "lastName:'"+ admin.getString("firstname") +"', "
-			+ "firstName:'"+ admin.getString("lastname") +"', "
-			+ "login:'"+ admin.getString("login") +"', "
-			+ "displayName:'"+ admin.getString("firstname") +" " + admin.getString("lastname") +"', "
-			+ "password:'"+ BCrypt.hashpw(admin.getString("password"), BCrypt.gensalt()) +"'})-[:HAS_FUNCTION]->" +
-			"(f:Function { externalId : 'SUPER_ADMIN', name : 'SuperAdmin' })");
-		neo.execute("MERGE (u:User {id:'OAuthSystemUser'}) ON CREATE SET u.manual = true", (JsonObject) null, (Handler<Message<JsonObject>>) null);
+			+ "lastName:'" + admin.getString("firstname") + "', "
+			+ "firstName:'" + admin.getString("lastname") + "', "
+			+ "login:'" + admin.getString("login") + "', "
+			+ "displayName:'" + admin.getString("firstname") + " " + admin.getString("lastname") + "', "
+			+ "password:'" + BCrypt.hashpw(admin.getString("password"), BCrypt.gensalt()) + "'})-[:HAS_FUNCTION]->" +
+			"(f:Function { externalId : 'SUPER_ADMIN', name : 'SuperAdmin' })", event -> {
+				if (!"ok".equals(event.body().getString("status"))) {
+					log.error("Create default super admin : " + event.body().getString("message"));
+				}
+			});
+		neo.execute("MERGE (u:User {id:'OAuthSystemUser'}) ON CREATE SET u.manual = true", (JsonObject) null, event -> {
+			if (!"ok".equals(event.body().getString("status"))) {
+				log.error("Create OAuthSystemUser : " + event.body().getString("message"));
+			}
+		});
 	}
 
 	@BusAddress("directory")
