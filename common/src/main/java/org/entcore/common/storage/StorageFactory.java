@@ -24,6 +24,10 @@ import io.vertx.core.shareddata.LocalMap;
 import org.entcore.common.storage.impl.*;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.JsonArray;
+import org.entcore.common.validation.ExtensionValidator;
+import org.entcore.common.validation.FileValidator;
+import org.entcore.common.validation.QuotaFileSizeValidation;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -94,6 +98,12 @@ public class StorageFactory {
 					((FileStorage) storage).setAntivirus(av);
 				}
 			}
+			FileValidator fileValidator = new QuotaFileSizeValidation();
+			JsonArray blockedExtensions = fs.getJsonArray("blockedExtensions");
+			if (blockedExtensions != null && blockedExtensions.size() > 0) {
+				fileValidator.setNext(new ExtensionValidator(blockedExtensions));
+			}
+			((FileStorage) storage).setValidator(fileValidator);
 		} else {
 			storage = new GridfsStorage(vertx, Server.getEventBus(vertx), gridfsAddress);
 		}

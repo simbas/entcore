@@ -38,6 +38,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import org.entcore.common.validation.FileValidator;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -53,6 +54,7 @@ public class FileStorage implements Storage {
 	private final FileSystem fs;
 	private final boolean flat;
 	private AntivirusClient antivirus;
+	private FileValidator validator;
 
 	public FileStorage(Vertx vertx, String basePath, boolean flat) {
 		this.basePath = (basePath != null && !basePath.endsWith("/")) ? basePath + "/" : basePath;
@@ -84,11 +86,24 @@ public class FileStorage implements Storage {
 			public void handle(final HttpServerFileUpload upload) {
 				request.pause();
 				final JsonObject metadata = FileUtils.metadata(upload);
-				if (maxSize != null && maxSize < metadata.getLong("size", 0l)) {
-					handler.handle(new JsonObject().put("status", "error")
-							.put("message", "file.too.large"));
-					return;
+				if (validator != null) {
+					validator.process(metadata, new JsonObject().put("maxSize", maxSize), new Handler<AsyncResult<Void>>() {
+						@Override
+						public void handle(AsyncResult<Void> event) {
+							if (event.succeeded()) {
+								doUpload(upload, metadata);
+							} else {
+								handler.handle(res.put("status", "error")
+										.put("message", event.cause().getMessage()));
+							}
+						}
+					});
+				} else {
+					doUpload(upload, metadata);
 				}
+			}
+
+			private void doUpload(final HttpServerFileUpload upload, final JsonObject metadata) {
 				upload.endHandler(new Handler<Void>() {
 					@Override
 					public void handle(Void event) {
@@ -484,6 +499,10 @@ public class FileStorage implements Storage {
 
 	public void setAntivirus(AntivirusClient antivirus) {
 		this.antivirus = antivirus;
+	}
+
+	public void setValidator(FileValidator validator) {
+		this.validator = validator;
 	}
 
 }
