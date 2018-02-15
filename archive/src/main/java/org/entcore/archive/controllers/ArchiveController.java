@@ -186,6 +186,8 @@ public class ArchiveController extends BaseController {
 			public void handle(AsyncResult<Void> event) {
 				if (event.succeeded() && request.response().getStatusCode() == 200) {
 					exportService.deleteExport(exportId);
+				} else if (!request.response().ended()) {
+					notFound(request);
 				}
 			}
 		});

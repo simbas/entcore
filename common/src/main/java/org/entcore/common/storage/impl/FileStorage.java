@@ -22,6 +22,7 @@ package org.entcore.common.storage.impl;
 import fr.wseduc.swift.utils.FileUtils;
 import fr.wseduc.webutils.DefaultAsyncResult;
 import fr.wseduc.webutils.http.ETag;
+import fr.wseduc.webutils.http.Renders;
 import org.entcore.common.storage.AntivirusClient;
 import org.entcore.common.storage.BucketStats;
 import org.entcore.common.storage.Storage;
@@ -289,7 +290,11 @@ public class FileStorage implements Storage {
 			if (resultHandler != null) {
 				resp.sendFile(path, resultHandler);
 			} else {
-				resp.sendFile(path);
+				resp.sendFile(path, ar -> {
+					if (ar.failed() && !request.response().ended()) {
+						Renders.notFound(request);
+					}
+				});
 			}
 		} catch (FileNotFoundException e) {
 			resp.setStatusCode(404).setStatusMessage("Not Found").end();

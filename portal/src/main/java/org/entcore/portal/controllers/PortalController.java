@@ -187,7 +187,11 @@ public class PortalController extends BaseController {
 	public void assets(final HttpServerRequest request) {
 		String path = assetsPath + request.path();
 		if (dev) {
-			request.response().sendFile(path);
+			request.response().sendFile(path, ar -> {
+				if (ar.failed() && !request.response().ended()) {
+					notFound(request);
+				}
+			});
 		} else {
 			sendWithLastModified(request, path);
 		}
@@ -197,7 +201,11 @@ public class PortalController extends BaseController {
 	public void currentAssets(final HttpServerRequest request) {
 		final String path = assetsPath + getThemePrefix(request) + request.path().substring(15);
 		if (dev) {
-			request.response().sendFile(path);
+			request.response().sendFile(path, ar -> {
+				if (ar.failed() && !request.response().ended()) {
+					notFound(request);
+				}
+			});
 		} else {
 			sendWithLastModified(request, path);
 		}

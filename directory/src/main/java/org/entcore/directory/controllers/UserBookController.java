@@ -646,11 +646,19 @@ public class UserBookController extends BaseController {
 							return;
 						}
 					}
-					request.response().sendFile(defaultAvatarPath);
+					request.response().sendFile(defaultAvatarPath, ar -> {
+						if (ar.failed() && !request.response().ended()) {
+							notFound(request);
+						}
+					});
 				}
 			});
 		} else {
-			request.response().sendFile(defaultAvatarPath);
+			request.response().sendFile(defaultAvatarPath, ar -> {
+				if (ar.failed() && !request.response().ended()) {
+					notFound(request);
+				}
+			});
 		}
 	}
 
