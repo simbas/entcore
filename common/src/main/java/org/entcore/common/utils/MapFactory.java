@@ -74,14 +74,21 @@ public class MapFactory {
 
 	@Deprecated
 	public static <K,V> Map<K,V> getSyncClusterMap(String name, Vertx vertx) {
+		return getSyncClusterMap(name, vertx, true);
+	}
+
+	@Deprecated
+	public static <K,V> Map<K,V> getSyncClusterMap(String name, Vertx vertx, boolean elseLocalMap) {
 		LocalMap<Object, Object> server = vertx.sharedData().getLocalMap("server");
 		Boolean cluster = (Boolean) server.get("cluster");
 		final Map<K, V> map;
 		if (Boolean.TRUE.equals(cluster)) {
 			ClusterManager cm = ((VertxInternal) vertx).getClusterManager();
 			map = cm.getSyncMap(name);
-		} else {
+		} else if (elseLocalMap) {
 			map = vertx.sharedData().getLocalMap(name);
+		} else {
+			map = new HashMap<>();
 		}
 		return map;
 	}
