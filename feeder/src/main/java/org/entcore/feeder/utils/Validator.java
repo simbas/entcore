@@ -105,10 +105,10 @@ public class Validator {
 	}
 
 	public String validate(JsonObject object, String acceptLanguage) {
-		return validate(object, acceptLanguage, false);
+		return validate(object, acceptLanguage, false, null);
 	}
-
-	public String validate(JsonObject object, String acceptLanguage, boolean conserveChildAttributes) {
+	// errorsContext param is usefull to pass (by reference) all informations to render an acurate report for CSV feeding
+	public String validate(JsonObject object, String acceptLanguage, boolean conserveChildAttributes, JsonArray errorsContext) {
 		if (object == null) {
 			return i18n.translate("null.object", I18n.DEFAULT_DOMAIN, acceptLanguage);
 		}
@@ -128,7 +128,7 @@ public class Validator {
 				String err;
 				switch (type) {
 					case "string" :
-						err = validString(attr, value, validator, acceptLanguage);
+						err = validString(attr, value, validator, acceptLanguage, errorsContext);
 						break;
 					case "array-string" :
 						err = validStringArray(attr, value, validator, acceptLanguage);
@@ -143,8 +143,10 @@ public class Validator {
 						err = i18n.translate("missing.type.validator", I18n.DEFAULT_DOMAIN, acceptLanguage, type);
 				}
 				if (err != null) {
-					log.info(err);
-					object.removeField(attr);
+					if (!"ignore".equals(err)) {
+						log.info(err);
+					}
+					if (errorsContext == null) object.removeField(attr); // Remove if value is invalid except during CSV feeding.
 					continue;
 				}
 				if (value instanceof JsonArray) {
@@ -162,7 +164,7 @@ public class Validator {
 			return e.getMessage();
 		}
 		generate(object);
-		return required(object, acceptLanguage);
+		return required(object, acceptLanguage, errorsContext);
 	}
 
 	public String modifiableValidate(JsonObject object) {
@@ -236,14 +238,22 @@ public class Validator {
 	}
 
 	private String required(JsonObject object) {
-		return required(object, "fr");
+		return required(object, "fr", null);
 	}
 
-	private String required(JsonObject object, String acceptLanguage) {
+	private String required(JsonObject object, String acceptLanguage, JsonArray errorsContext) {
 		Map<String, Object> m = object.toMap();
 		for (Object o : required) {
 			if (!m.containsKey(o.toString())) {
-				return i18n.translate("missing.attribute", I18n.DEFAULT_DOMAIN, acceptLanguage, i18n.translate(o.toString(), I18n.DEFAULT_DOMAIN, acceptLanguage));
+				if (errorsContext != null) {
+					errorsContext.addObject(new JsonObject()
+							.putString("reason", "missing.attribute")
+							.putString("attribute", i18n.translate(o.toString(), I18n.DEFAULT_DOMAIN, acceptLanguage))
+					);
+				}
+				return i18n.translate("missing.attribute", I18n.DEFAULT_DOMAIN, acceptLanguage,
+						"", i18n.translate(o.toString(), I18n.DEFAULT_DOMAIN, acceptLanguage))
+						;
 			}
 		}
 		return null;
@@ -405,10 +415,10 @@ public class Validator {
 	}
 
 	private String validString(String attr, Object value, String validator) {
-		return validString(attr, value, validator, "fr");
+		return validString(attr, value, validator, "fr", null);
 	}
 
-	private String validString(String attr, Object value, String validator, String acceptLanguage) {
+	private String validString(String attr, Object value, String validator, String acceptLanguage, JsonArray errorsContext) {
 		Pattern p = patterns.get(validator);
 		if (p == null) {
 			return i18n.translate("missing.validator", I18n.DEFAULT_DOMAIN, acceptLanguage, validator);
@@ -424,7 +434,22 @@ public class Validator {
 			}
 			return null;
 		} else {
+<<<<<<< HEAD
 			return i18n.translate("invalid.value", I18n.DEFAULT_DOMAIN, acceptLanguage, attr, (value != null ? value.toString() : "null"));
+=======
+			if ("notEmpty".equals(validator)) {
+				return "ignore";
+			} else {
+				if (errorsContext != null) {
+					errorsContext.addObject(new JsonObject()
+							.putString("reason", "invalid.value")
+							.putString("attribute", i18n.translate(attr, I18n.DEFAULT_DOMAIN, acceptLanguage))
+							.putString("value", (value != null ? value.toString() : "null"))
+					);
+				}
+				return i18n.translate("invalid.value", I18n.DEFAULT_DOMAIN, acceptLanguage, attr, (value != null ? value.toString() : "null"));
+			}
+>>>>>>> 338dcbc... [Feeder] Make missing.attribute and invalid.value softError
 		}
 	}
 
