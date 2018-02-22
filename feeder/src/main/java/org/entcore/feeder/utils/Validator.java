@@ -434,9 +434,6 @@ public class Validator {
 			}
 			return null;
 		} else {
-<<<<<<< HEAD
-			return i18n.translate("invalid.value", I18n.DEFAULT_DOMAIN, acceptLanguage, attr, (value != null ? value.toString() : "null"));
-=======
 			if ("notEmpty".equals(validator)) {
 				return "ignore";
 			} else {
@@ -449,7 +446,6 @@ public class Validator {
 				}
 				return i18n.translate("invalid.value", I18n.DEFAULT_DOMAIN, acceptLanguage, attr, (value != null ? value.toString() : "null"));
 			}
->>>>>>> 338dcbc... [Feeder] Make missing.attribute and invalid.value softError
 		}
 	}
 
