@@ -135,7 +135,7 @@ public class AAFUtil {
 
 		for (Object o : value) {
 			String [] s = ((String) o).split("\\$");
-			if ("1".equals(s[1]) || "2".equals(s[1])) {
+			if ("1".equals(s[1]) || "2".equals(s[1]) || "10".equals(s[1]) || "20".equals(s[1])) {
 				if (!ENTEleveParents.contains(s[0])) {
 					ENTEleveParents.add(s[0]);
 				}
@@ -180,6 +180,7 @@ public class AAFUtil {
 			}
 			if (isEmpty(ENTEleveAutoriteParentale1) && "1".equals(s[3])) {
 				ENTEleveAutoriteParentale1 = s[0];
+				ENTEleveAutoriteParentale.add(ENTEleveAutoriteParentale1);
 			}
 			if (isEmpty(ENTEleveAutoriteParentale2) && "2".equals(s[3])) {
 				ENTEleveAutoriteParentale2 = s[0];
