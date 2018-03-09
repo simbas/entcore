@@ -22,8 +22,7 @@ package org.entcore.feeder.utils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -108,7 +107,7 @@ public class AAFUtil {
 	private static JsonObject siecleConverter(JsonArray value) {
 		JsonObject res = new JsonObject();
 		JsonArray ENTEleveParents = new JsonArray();
-		JsonArray ENTEleveAutoriteParentale = new JsonArray();
+		Set<String> ENTEleveAutoriteParentale = new HashSet<>();
 		String ENTEleveAutoriteParentale1 = "";
 		String ENTEleveAutoriteParentale2 = "";
 		String ENTElevePersRelEleve1 = "";
@@ -178,9 +177,11 @@ public class AAFUtil {
 					}
 				}
 			}
-			if (isEmpty(ENTEleveAutoriteParentale1) && "1".equals(s[3])) {
-				ENTEleveAutoriteParentale1 = s[0];
-				ENTEleveAutoriteParentale.add(ENTEleveAutoriteParentale1);
+			if ("1".equals(s[3])) {
+				if (isEmpty(ENTEleveAutoriteParentale1)) {
+					ENTEleveAutoriteParentale1 = s[0];
+				}
+				ENTEleveAutoriteParentale.add(s[0]);
 			}
 			if (isEmpty(ENTEleveAutoriteParentale2) && "2".equals(s[3])) {
 				ENTEleveAutoriteParentale2 = s[0];
@@ -194,7 +195,7 @@ public class AAFUtil {
 			ENTEleveAutoriteParentale.add(ENTEleveAutoriteParentale2);
 		}
 		res.put("ENTEleveParents", ENTEleveParents);
-		res.put("ENTEleveAutoriteParentale", ENTEleveAutoriteParentale);
+		res.put("ENTEleveAutoriteParentale", new JsonArray(new ArrayList<>(ENTEleveAutoriteParentale)));
 		res.put("ENTElevePersRelEleve1", ENTElevePersRelEleve1);
 		res.put("ENTEleveQualitePersRelEleve1", ENTEleveQualitePersRelEleve1);
 		res.put("ENTElevePersRelEleve2", ENTElevePersRelEleve2);
