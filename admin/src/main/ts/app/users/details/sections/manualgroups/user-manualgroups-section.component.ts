@@ -36,7 +36,7 @@ import { AbstractSection } from '../abstract.section'
                     <div *ngIf="mg.id">
                         <span>{{ mg.name }}</span>
                         <i  class="fa fa-times action" (click)="removeGroup(mg)"
-                            [tooltip]="'delete.this.group' | translate"
+                            [title]="'delete.this.group' | translate"
                             [ngClass]="{ disabled: spinner.isLoading(mg.id)}">
                         </i>
                     </div>

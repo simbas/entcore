@@ -37,7 +37,7 @@ import { OnChanges, OnInit } from '@angular/core/src/metadata/lifecycle_hooks';
                     <span>{{ c.name }}</span>
                     <i class="fa fa-times action" 
                         (click)="removeClass(c)"
-                        [tooltip]="'delete.this.class' | translate"
+                        [title]="'delete.this.class' | translate"
                         [ngClass]="{ disabled: spinner.isLoading('portal-content')}">
                     </i>
                 </li>

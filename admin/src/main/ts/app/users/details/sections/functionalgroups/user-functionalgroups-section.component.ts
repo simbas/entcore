@@ -36,7 +36,7 @@ import { SpinnerService, NotifyService } from '../../../../core/services'
                     <div *ngIf="g.id">
                         <span>{{ g.name }}</span>
                         <i  class="fa fa-times action" (click)="removeGroup(g)"
-                            [tooltip]="'delete.this.group' | translate"
+                            [title]="'delete.this.group' | translate"
                             [ngClass]="{ disabled: spinner.isLoading(g.id)}">
                         </i>
                     </div>

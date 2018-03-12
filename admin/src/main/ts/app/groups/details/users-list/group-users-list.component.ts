@@ -18,20 +18,20 @@ import { UserListService } from '../../../core/services'
             noResultsLabel="list.results.no.users">
             <div toolbar>
                 <i class="fa" aria-hidden="true"
-                [ngClass]="{
-                    'fa-sort-alpha-asc': userLS.sortsMap.alphabetical.sort === '+',
-                    'fa-sort-alpha-desc': userLS.sortsMap.alphabetical.sort === '-',
-                    'selected': userLS.sortsMap.alphabetical.selected
-                }"
-                [tooltip]="'sort.alphabetical' | translate" position="top"
-                (click)="userLS.changeSorts('alphabetical')"></i>
+                    [ngClass]="{
+                        'fa-sort-alpha-asc': userLS.sortsMap.alphabetical.sort === '+',
+                        'fa-sort-alpha-desc': userLS.sortsMap.alphabetical.sort === '-',
+                        'selected': userLS.sortsMap.alphabetical.selected
+                    }"
+                    [title]="'sort.alphabetical' | translate" position="top"
+                    (click)="userLS.changeSorts('alphabetical')"></i>
                 <i class="fa" aria-hidden="true"
                     [ngClass]="{
                         'fa-sort-amount-asc': userLS.sortsMap.profile.sort === '+',
                         'fa-sort-amount-desc': userLS.sortsMap.profile.sort === '-',
                         'selected': userLS.sortsMap.profile.selected
                     }"
-                    [tooltip]="'sort.profile' | translate" position="top"
+                    [title]="'sort.profile' | translate" position="top"
                     (click)="userLS.changeSorts('profile')"></i>
                 <strong class="badge">
                     {{ users.length }}
