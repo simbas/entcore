@@ -440,7 +440,7 @@ public class DefaultSchoolService implements SchoolService {
 		String query = 
 			"MATCH (u:User)-[:IN]->(pg: ProfileGroup)-[:DEPENDS]->(s:Structure) " +
 			"WHERE s.id = {structureId} " + 
-			"RETURN collect(DISTINCT EXTRACT(function IN u.functions | last(split(function, \"$\")))) as aafFunctions";
+			"RETURN collect(DISTINCT EXTRACT(function IN u.functions | split(function, \"$\"))) as aafFunctions";
 
 		JsonObject params = new JsonObject().put("structureId", structureId);
 		neo.execute(query, params, Neo4jResult.validResultHandler(result));
@@ -495,7 +495,7 @@ public class DefaultSchoolService implements SchoolService {
 			"u.id as id, p.name as type, u.activationCode as code, u.login as login," +
 			"u.firstName as firstName, u.lastName as lastName, u.displayName as displayName," +
 			"u.source as source, u.deleteDate as deleteDate, u.disappearanceDate as disappearanceDate, u.blocked as blocked," +
-			"EXTRACT(function IN u.functions | last(split(function, \"$\"))) as aafFunctions," +
+			"EXTRACT(function IN u.functions | split(function, \"$\")) as aafFunctions," +
 			"CASE WHEN class IS NULL THEN [] ELSE COLLECT(distinct {id: class.id, name: class.name}) END as classes," +
 			"CASE WHEN fgroup IS NULL THEN [] ELSE COLLECT(distinct fgroup.name) END as functionalGroups, " +
 			"CASE WHEN mgroup IS NULL THEN [] ELSE COLLECT(distinct mgroup.name) END as manualGroups, " +

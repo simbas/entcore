@@ -16,6 +16,7 @@ import { UserFilters } from './filters/user-filters.component'
 import { UserList } from './list/user-list.component'
 import { 
     UserChildrenSection, 
+    UserAafFunctionsComponent,
     UserAdministrativeSection, 
     UserInfoSection, 
     UserRelativesSection,
@@ -42,6 +43,7 @@ import { UserInfoService } from './details/sections/info/user-info.service'
         UserFilters,
         UserList,
         UserChildrenSection,
+        UserAafFunctionsComponent,
         UserAdministrativeSection,
         UserInfoSection,
         UserRelativesSection,

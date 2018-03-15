@@ -126,10 +126,9 @@ import { UsersStore } from '../users.store'
             *ngIf="!user.deleteDate">
         </user-children-section>
         
-        <panel-section section-title="users.details.section.functions" 
-            [folded]="true" *ngIf="!user.deleteDate">
-            <ul><li *ngFor="let f of user?.aafFunctions">{{ f }}</li></ul>
-        </panel-section>
+        <user-aaf-functions-section [user]="user" [structure]="structure"
+            *ngIf="user.type == 'Personnel' || user.type == 'Teacher'">
+        </user-aaf-functions-section>
 
         <user-structures-section [user]="user" [structure]="structure" 
             *ngIf="!user.deleteDate">
