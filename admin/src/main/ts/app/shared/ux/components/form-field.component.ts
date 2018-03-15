@@ -11,7 +11,7 @@ import { Component, Input } from '@angular/core'
     styles: [`
         div.form-field { display: flex; align-items: center; }
         div.form-field >>> > * { flex: 1; }
-        div.form-field > *:first-child { flex: 0 0 150px; }
+        div.form-field > *:first-child { flex: 0 0 150px; margin-right: 10px;}
     `]
 })
 export class FormFieldComponent {
