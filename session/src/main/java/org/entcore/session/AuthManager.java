@@ -648,7 +648,7 @@ public class AuthManager extends BusModBase implements Handler<Message<JsonObjec
 		final String query5 = "MATCH (u:User {id: {id}})-[:PREFERS]->(uac:UserAppConf) RETURN uac AS preferences";
 		JsonObject params = new JsonObject();
 		params.put("id", userId);
-		JsonArray statements = new JsonArray()
+		JsonArray statements = new fr.wseduc.webutils.collections.JsonArray()
 				.add(new JsonObject().put("statement", query).put("parameters", params))
 				.add(new JsonObject().put("statement", query2).put("parameters", params))
 				.add(new JsonObject().put("statement", query3).put("parameters", params))
@@ -672,9 +672,9 @@ public class AuthManager extends BusModBase implements Handler<Message<JsonObjec
 					}
 					j.put("userId", userId);
 					JsonObject functions = new JsonObject();
-					JsonArray actions = new JsonArray();
-					JsonArray apps = new JsonArray();
-					for (Object o : getOrElse(j2.getJsonArray("authorizedActions"), new JsonArray())) {
+					JsonArray actions = new fr.wseduc.webutils.collections.JsonArray();
+					JsonArray apps = new fr.wseduc.webutils.collections.JsonArray();
+					for (Object o : getOrElse(j2.getJsonArray("authorizedActions"), new fr.wseduc.webutils.collections.JsonArray())) {
 						if (!(o instanceof JsonArray)) continue;
 						JsonArray a = (JsonArray) o;
 						actions.add(new JsonObject()
@@ -682,7 +682,7 @@ public class AuthManager extends BusModBase implements Handler<Message<JsonObjec
 								.put("displayName", a.getString(1))
 								.put("type", a.getString(2)));
 					}
-					for (Object o : getOrElse(j2.getJsonArray("apps"), new JsonArray())) {
+					for (Object o : getOrElse(j2.getJsonArray("apps"), new fr.wseduc.webutils.collections.JsonArray())) {
 						if (!(o instanceof JsonArray)) continue;
 						JsonArray a = (JsonArray) o;
 						apps.add(new JsonObject()
@@ -695,7 +695,7 @@ public class AuthManager extends BusModBase implements Handler<Message<JsonObjec
 										.put("prefix", (String) a.getString(6))
 						);
 					}
-					for (Object o : getOrElse(j.getJsonArray("aafFunctions"), new JsonArray())) {
+					for (Object o : getOrElse(j.getJsonArray("aafFunctions"), new fr.wseduc.webutils.collections.JsonArray())) {
 						if (o == null) continue;
 						String [] sf = o.toString().split("\\$");
 						if (sf.length == 5) {
@@ -703,8 +703,8 @@ public class AuthManager extends BusModBase implements Handler<Message<JsonObjec
 							if (jo == null) {
 								jo = new JsonObject().put("code", sf[1])
 										.put("functionName", sf[2])
-										.put("scope", new JsonArray())
-										.put("structureExternalIds", new JsonArray())
+										.put("scope", new fr.wseduc.webutils.collections.JsonArray())
+										.put("structureExternalIds", new fr.wseduc.webutils.collections.JsonArray())
 										.put("subjects", new JsonObject());
 								functions.put(sf[1], jo);
 							}
@@ -713,8 +713,8 @@ public class AuthManager extends BusModBase implements Handler<Message<JsonObjec
 								subject = new JsonObject()
 										.put("subjectCode", sf[3])
 										.put("subjectName", sf[4])
-										.put("scope", new JsonArray())
-										.put("structureExternalIds", new JsonArray());
+										.put("scope", new fr.wseduc.webutils.collections.JsonArray())
+										.put("structureExternalIds", new fr.wseduc.webutils.collections.JsonArray());
 								jo.getJsonObject("subjects").put(sf[3], subject);
 							}
 							jo.getJsonArray("structureExternalIds").add(sf[0]);
@@ -727,7 +727,7 @@ public class AuthManager extends BusModBase implements Handler<Message<JsonObjec
 						}
 					}
 					j.remove("aafFunctions");
-					for (Object o : getOrElse(j.getJsonArray("functions"), new JsonArray())) {
+					for (Object o : getOrElse(j.getJsonArray("functions"), new fr.wseduc.webutils.collections.JsonArray())) {
 						if (!(o instanceof JsonArray)) continue;
 						JsonArray a = (JsonArray) o;
 						String code = a.getString(0);
@@ -740,7 +740,7 @@ public class AuthManager extends BusModBase implements Handler<Message<JsonObjec
 					}
 					final JsonObject children = new JsonObject();
 					final List<String> childrenIds = new ArrayList<String>();
-					for (Object o : getOrElse(j.getJsonArray("childrenInfo"), new JsonArray())) {
+					for (Object o : getOrElse(j.getJsonArray("childrenInfo"), new fr.wseduc.webutils.collections.JsonArray())) {
 						if (!(o instanceof JsonArray)) continue;
 						final JsonArray a = (JsonArray) o;
 						final String childId = a.getString(0);
@@ -760,12 +760,12 @@ public class AuthManager extends BusModBase implements Handler<Message<JsonObjec
 					j.put("functions", functions);
 					j.put("authorizedActions", actions);
 					j.put("apps", apps);
-					j.put("childrenIds", new JsonArray(childrenIds));
+					j.put("childrenIds", new fr.wseduc.webutils.collections.JsonArray(childrenIds));
 					j.put("children", children);
 					final JsonObject cache = (results.getJsonArray(4) != null && results.getJsonArray(4).size() > 0 &&
 							results.getJsonArray(4).getJsonObject(0) != null) ? results.getJsonArray(4).getJsonObject(0) : new JsonObject();
 					j.put("cache", cache);
-					j.put("widgets", getOrElse(j3.getJsonArray("widgets"), new JsonArray()));
+					j.put("widgets", getOrElse(j3.getJsonArray("widgets"), new fr.wseduc.webutils.collections.JsonArray()));
 					handler.handle(j);
 				} else {
 					handler.handle(null);
