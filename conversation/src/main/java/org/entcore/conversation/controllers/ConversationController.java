@@ -304,6 +304,7 @@ public class ConversationController extends BaseController {
 														JsonObject result = event.right().getValue();
 														JsonObject timelineParams = new JsonObject()
 															.put("subject", result.getString("subject"))
+															.put("body", StringUtils.stripHtmlTag(result.getString("body")))
 															.put("id", result.getString("id"))
 															.put("sentIds", message.getJsonArray("allUsers", new fr.wseduc.webutils.collections.JsonArray()));
 														timelineNotification(request, timelineParams, user);
@@ -362,6 +363,7 @@ public class ConversationController extends BaseController {
 				.put("subject", subject)
 				.put("messageUri", pathPrefix + "/conversation#/read-mail/" + id);
 		params.put("resourceUri", params.getString("messageUri"));
+		params.put("pushNotif", new JsonObject().put("title", "push.notif.new.message").put("body", user.getUsername()+ " : "+ sentMessage.getString("body")));
 		List<String> recipients = new ArrayList<>();
 		String idTmp;
 		for (Object o : r) {
